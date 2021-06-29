@@ -69,7 +69,7 @@ ShotAndSave()
     cap_zoom := (PX + PW // 2 - PH // 2) . "|" . PY . "|" . PH . "|" . PH
     If (win_class = "CrossFire") && (WH_Rate > 1.7)
         cap_zoom := (PX + PW // 2 - PH * 2 // 3) . "|" . PY . "|" . PH * 4 // 3 . "|" . PH
-    Screenshot(A_ScriptDir . "\游戏截图\Screenshot_" . win_class . "_" . A_TickCount + A_NowUTC * A_MSec . ".jpg", cap_zoom)
+    Screenshot(A_ScriptDir . "\游戏截图\Screenshot_" . win_class . "_" . A_TickCount * A_MSec + A_NowUTC . ".jpg", cap_zoom)
 }
 ;==================================================================================
 ;截图存图,screen: X|Y|W|H
