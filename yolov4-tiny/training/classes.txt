@@ -1,3 +1,2 @@
-body
-self-armed
-dead
+live-body
+dead-body
