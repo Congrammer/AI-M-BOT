@@ -14259,7 +14259,7 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="TRAIN-A-CUSTOM-YOLOv4-tiny-OBJECT-DETECTOR"><strong>TRAIN A CUSTOM YOLOv4-tiny OBJECT DETECTOR</strong><a class="anchor-link" href="#TRAIN-A-CUSTOM-YOLOv4-tiny-OBJECT-DETECTOR">&#182;</a></h1><p>(A MODIFIED TUTORIAL FOR BEGINNERS)</p>
+<h1 id="TRAIN-A-CUSTOM-YOLOv4-tiny-OBJECT-DETECTOR-USING-GOOGLE-COLAB"><strong>TRAIN A CUSTOM YOLOv4-tiny OBJECT DETECTOR USING GOOGLE COLAB</strong><a class="anchor-link" href="#TRAIN-A-CUSTOM-YOLOv4-tiny-OBJECT-DETECTOR-USING-GOOGLE-COLAB">&#182;</a></h1><p>(A MODIFIED TUTORIAL FOR BEGINNERS)</p>
 
 </div>
 </div>
@@ -14271,15 +14271,15 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="In-this-tutorial,-we-will-be-training-our-custom-detector-for-fps-game-body-detection-using-YOLOv4-tiny-and&#160;Darknet"><strong>In this tutorial, we will be training our custom detector for fps game body detection using YOLOv4-tiny and&#160;Darknet</strong><a class="anchor-link" href="#In-this-tutorial,-we-will-be-training-our-custom-detector-for-fps-game-body-detection-using-YOLOv4-tiny-and&#160;Darknet">&#182;</a></h1><h2 id="This-notebook-is-originally-created-by-tech-zizou,-and-now-modified-by-jiapai12138">This notebook is originally created by tech zizou, and now modified by jiapai12138<a class="anchor-link" href="#This-notebook-is-originally-created-by-tech-zizou,-and-now-modified-by-jiapai12138">&#182;</a></h2>
+<h1 id="In-this-tutorial,-we-will-be-training-our-custom-detector-for-fps-game-body-detection-using-YOLOv4-tiny-and&#160;Darknet"><strong>In this tutorial, we will be training our custom detector for fps game body detection using YOLOv4-tiny and&#160;Darknet</strong><a class="anchor-link" href="#In-this-tutorial,-we-will-be-training-our-custom-detector-for-fps-game-body-detection-using-YOLOv4-tiny-and&#160;Darknet">&#182;</a></h1><h2 id="This-notebook-was-originally-created-by-tech-zizou,-and-now-modified-by-jiapai12138">This notebook was originally created by tech zizou, and now modified by jiapai12138<a class="anchor-link" href="#This-notebook-was-originally-created-by-tech-zizou,-and-now-modified-by-jiapai12138">&#182;</a></h2>
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="HOW-TO-BEGIN?"><strong>HOW TO BEGIN</strong>?<a class="anchor-link" href="#HOW-TO-BEGIN?">&#182;</a></h1><ul>
-<li><p>Click on <strong>File</strong> in the menu bar and click on <strong>Save a copy in drive</strong>.This will open a copy of my colab notebook on your browser which you can now use.</p>
+<li><p>Click on <strong>File</strong> in the menu bar and click on <strong>Save a copy in drive</strong>. This will open a copy of my colab notebook on your browser which you can now use.</p>
 </li>
-<li><p>Next, once you have opened the copy of my notebook and are connected to the Google Colab VM , click on <strong>Runtime</strong> in the menu bar and click on <strong>Change runtime type</strong>. Select <strong>GPU</strong> and click on save.</p>
+<li><p>Next, once you have opened the copy of my notebook and are connected to the Google Colab VM, click on <strong>Runtime</strong> in the menu bar and click on <strong>Change runtime type</strong>. Select <strong>GPU</strong> and click on save.</p>
 </li>
 </ul>
 
@@ -14293,7 +14293,7 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="FOLLOW-THESE-10-STEPS-TO-TRAIN-AN-OBJECT-DETECTOR-USING&#160;YOLOv4-tiny"><strong>FOLLOW THESE 10 STEPS TO TRAIN AN OBJECT DETECTOR USING&#160;YOLOv4-tiny</strong><a class="anchor-link" href="#FOLLOW-THESE-10-STEPS-TO-TRAIN-AN-OBJECT-DETECTOR-USING&#160;YOLOv4-tiny">&#182;</a></h1>
+<h1 id="**FOLLOW-THESE-10-STEPS-TO-TRAIN-A-YOLOv4-tiny-based-OBJECT-DETECTOR-USING&#160;GOOGLE-COLAB**"><ins>**FOLLOW THESE 10 STEPS TO TRAIN A YOLOv4-tiny-based OBJECT DETECTOR USING&#160;GOOGLE COLAB**</ins><a class="anchor-link" href="#**FOLLOW-THESE-10-STEPS-TO-TRAIN-A-YOLOv4-tiny-based-OBJECT-DETECTOR-USING&#160;GOOGLE-COLAB**">&#182;</a></h1>
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
@@ -14317,18 +14317,22 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="2)-Create-yolov4-tiny-and-training-folders-in-your-drive"><strong>2) Create <em><code>yolov4-tiny</code></em> and <em><code>training</code></em> folders in your drive</strong><a class="anchor-link" href="#2)-Create-yolov4-tiny-and-training-folders-in-your-drive">&#182;</a></h1><p>Create a folder named <strong><em>yolov4-tiny</em></strong> in your drive.</p>
-<p>Next, create another folder named <strong><em>training</em></strong> inside the <strong><em>yolov4-tiny</em></strong> folder. This is where we will save our trained weights (This path is mentioned in the obj.data file which we will upload later)</p>
+<h1 id="2)-Create-yolov4-tiny-and-training-folders-in-your-drive"><strong>2) Create <em><code>yolov4-tiny</code></em> and <em><code>training</code></em> folders in your drive</strong><a class="anchor-link" href="#2)-Create-yolov4-tiny-and-training-folders-in-your-drive">&#182;</a></h1><ul>
+<li><p>Create a folder named <strong><em>yolov4-tiny</em></strong> in your drive.</p>
+</li>
+<li><p>Next, create another folder named <strong><em>training</em></strong> inside the <strong><em>yolov4-tiny</em></strong> folder. This is where we will save our trained weights (This path is mentioned in the obj.data file which we will upload later)</p>
+</li>
+</ul>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="3)-Create-&amp;-upload-these-files"><strong>3) Create &amp; upload these files</strong><a class="anchor-link" href="#3)-Create-&amp;-upload-these-files">&#182;</a></h1><p><code>What we need for training custom yolo detector</code></p>
-<p>a.   <code>Labeled Custom Dataset</code></p>
-<p>b.   <code>Custom cfg file</code></p>
-<p>c.   <code>obj.data and obj.names files</code></p>
-<p>d.   <code>process.py file (to create train.txt and test.txt files for training)</code></p>
+<p>a. <code>Labeled Custom Dataset</code></p>
+<p>b. <code>Custom cfg file</code></p>
+<p>c. <code>obj.data and obj.names files</code></p>
+<p>d. <code>process.py file (to create train.txt and test.txt files for training)</code></p>
 
 </div>
 </div>
@@ -14345,14 +14349,20 @@ a.anchor-link {
 <p>You can also download the custom config files from the official <a href="https://www.github.com/AlexeyAB/darknet">AlexeyAB Github</a></p>
 <p><strong>You need to make the following changes in your custom config file:</strong></p>
 <ul>
-<li>change line batch to batch=64</li>
-<li>change line subdivisions to subdivisions=16</li>
-<li>change line max_batches to (classes*2000 but not less than number of training images, but not less than number of training images and not less than 6000), f.e. max_batches=6000 if you train for 3 classes</li>
-<li>change line steps to 80% and 90% of max_batches, f.e. steps=4800,5400</li>
-<li>set network size width=416 height=416 or any value multiple of 32</li>
-<li>change line classes=80 to your number of objects in each of 2 [yolo]-layers</li>
-<li>change [filters=255] to filters=(classes + 5)x3 in the 2 [convolutional] before each [yolo] layer, keep in mind that it only has to be the last [convolutional] before each of the [yolo] layers.
-So if classes=1 then it should be filters=18. If classes=2 then write filters=21.</li>
+<li><p>change line batch to batch=64</p>
+</li>
+<li><p>change line subdivisions to subdivisions=16</p>
+</li>
+<li><p>change line max_batches to (classes*2000 but not less than number of training images, but not less than number of training images and not less than 6000), f.e. max_batches=6000 if you train for 3 classes</p>
+</li>
+<li><p>change line steps to 80% and 90% of max_batches, f.e. steps=4800, 5400</p>
+</li>
+<li><p>set network size width=416 height=416 or any value multiple of 32</p>
+</li>
+<li><p>change line classes=80 to your number of objects in each of 2 [yolo]-layers</p>
+</li>
+<li><p>change [filters=255] to filters=(classes + 5)x3 in the 2 [convolutional] before each [yolo] layer, keep in mind that it only has to be the last [convolutional] before each of the [yolo] layers. (So if classes=1 then it should be filters=18. If classes=2 then write filters=21)</p>
+</li>
 </ul>
 
 </div>
@@ -14365,11 +14375,6 @@ So if classes=1 then it should be filters=18. If classes=2 then write filters=21
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h3 id="obj.data"><strong>obj.data</strong><a class="anchor-link" href="#obj.data">&#182;</a></h3>
-</div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-
 <pre><code>classes = 2
 train  = data/train.txt
 valid  = data/test.txt
@@ -14390,6 +14395,11 @@ dead-body</code></pre>
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h2 id="3(d)-Upload-the-process.py-script-file-to-the-yolov4-tiny-folder-on-your-drive"><strong>3(d) Upload the <em><code>process.py</code></em> script file to the <em><code>yolov4-tiny</code></em> folder on your drive</strong><a class="anchor-link" href="#3(d)-Upload-the-process.py-script-file-to-the-yolov4-tiny-folder-on-your-drive">&#182;</a></h2><p><strong>To divide all image files into 2 parts. 90% for train and 10% for test.</strong></p>
 <p>This <em>process.py</em> script creates the files <em>train.txt</em> &amp; <em>test.txt</em> where the <em>train.txt</em> file has paths to 90% of the images and <em>test.txt</em> has paths to 10% of the images.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <p><strong>Content of <em><code>process.py</code></em> shown below:</strong></p>
 
 <pre><code>import glob, os
