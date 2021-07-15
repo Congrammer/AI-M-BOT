@@ -1,0 +1,8 @@
+path: ../素材标注  # dataset root dir
+train: ../train.txt  # train images
+val: ../train.txt  # val images
+test: ../test.txt  # test images
+
+# Classes
+nc: 2  # number of classes
+names: [ 'live-body', 'dead-body' ]  # class names
