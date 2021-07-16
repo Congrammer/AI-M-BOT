@@ -1,11 +1,12 @@
-from win32con import MOUSEEVENTF_MOVE, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP
+from pynput.mouse import Button, Controller
 from sys import exit, executable
 from win32api import mouse_event
 from keyboard import is_pressed
 from time import sleep, time
+from mss import mss, tools
 from ctypes import windll
+import pywintypes
 import win32gui
-import mss
 import os
 
 
@@ -22,49 +23,54 @@ def is_admin():
         return False
 
 
+def mouse_move_lr(num):
+    mouse = Controller()
+    mouse.click(Button.left, 1)
+    for i in range(10):
+        mouse.move(num, 0)
+        print(str('{:02.0f}'.format(i+1)), end='\r')
+        sleep(0.5)
+    mouse.click(Button.left, 1)
+    mouse.move(num*-5, 0)
+
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-image = 0
+find_window = 0
 
 if not is_admin():
     restart()
 
-with mss.mss() as sct:
+while not find_window:
+    hwnd_active = win32gui.GetForegroundWindow()
+    try:
+        title_name = win32gui.GetWindowText(hwnd_active)
+        class_name = win32gui.GetClassName(hwnd_active)
+        result = windll.user32.MessageBoxW(0, title_name, 'Is this the window you want?', 4)
+        find_window = (1 if result == 6 else 0)
+    except pywintypes.error:
+        continue
+    sleep(3)
+
+with mss() as sct:
+    hwnd = win32gui.FindWindow(class_name, None)
+    client_rect = win32gui.GetClientRect(hwnd)
+    corner_xy = win32gui.ClientToScreen(hwnd, (0, 0))
+    monitor = {'top': corner_xy[1], 'left': corner_xy[0], 'width': client_rect[2] - client_rect[0], 'height': client_rect[3] - client_rect[1]}
+    print('Get start!!!')
+    moved = 0
     while True:
-        hwnd_active = win32gui.GetForegroundWindow()
-        client_rect = win32gui.GetClientRect(hwnd_active)
-        corner_xy = win32gui.ClientToScreen(hwnd_active, (0, 0))
-        monitor = {'top': corner_xy[1], 'left': corner_xy[0], 'width': client_rect[2] - client_rect[0], 'height': client_rect[3] - client_rect[1]}
-        output = 'sct-{top}x{left}_{width}x{height}'.format(**monitor) + f'_{time()}.png'
-
         if is_pressed('left'):
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0)
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0)
-            for i in range(10):
-                mouse_event(MOUSEEVENTF_MOVE, -2, 0, 0, 0)
-                print(i)
-                sleep(0.5)
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0)
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0)
-            mouse_event(MOUSEEVENTF_MOVE, 10, 0, 0, 0)
-            image += 1
-
-            sct_img = sct.grab(monitor)
-            mss.tools.to_png(sct_img.rgb, sct_img.size, output=output)
+            mouse_move_lr(-10)
+            moved = 1
         elif is_pressed('right'):
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0)
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0)
-            for i in range(10):
-                mouse_event(MOUSEEVENTF_MOVE, 2, 0, 0, 0)
-                print(i)
-                sleep(0.5)
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0)
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0)
-            mouse_event(MOUSEEVENTF_MOVE, -10, 0, 0, 0)
-            image += 1
-
+            mouse_move_lr(10)
+            moved = 1
+        if moved:
             sct_img = sct.grab(monitor)
-            mss.tools.to_png(sct_img.rgb, sct_img.size, output=output)
-        elif is_pressed('end'):
+            output = 'sct-{top}x{left}_{width}x{height}'.format(**monitor) + f'_{time()}.png'
+            tools.to_png(sct_img.rgb, sct_img.size, output=output)
+            moved = 0
+        if is_pressed('end'):
             break
 
 exit(0)
