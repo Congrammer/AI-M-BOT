@@ -1,10 +1,10 @@
-from pynput.mouse import Button, Controller
 from sys import exit, executable
 from win32api import mouse_event
 from keyboard import is_pressed
 from time import sleep, time
 from mss import mss, tools
 from ctypes import windll
+import pydirectinput
 import pywintypes
 import win32gui
 import os
@@ -24,14 +24,13 @@ def is_admin():
 
 
 def mouse_move_lr(num):
-    mouse = Controller()
-    mouse.click(Button.left, 1)
+    pydirectinput.click()
     for i in range(10):
-        mouse.move(num, 0)
+        pydirectinput.move(num, 0)
         print(str('{:02.0f}'.format(i+1)), end='\r')
         sleep(0.5)
-    mouse.click(Button.left, 1)
-    mouse.move(num*-5, 0)
+    pydirectinput.click()
+    pydirectinput.move(num*-5, 0)
 
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
