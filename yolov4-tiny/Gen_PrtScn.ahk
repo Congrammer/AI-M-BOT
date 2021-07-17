@@ -10,7 +10,7 @@
 ListLines, Off                   ;不显示最近执行的脚本行
 SendMode, Input                  ;使用更速度和可靠方式发送键鼠点击
 SetWorkingDir, %A_ScriptDir%     ;保证一致的脚本起始工作目录
-Process, Priority, , H           ;进程高优先级
+Process, Priority, , A           ;进程高优先级
 SetBatchLines, -1                ;全速运行,且因为全速运行,部分代码不得不调整
 ;==================================================================================
 CheckPermission1()
