@@ -16,8 +16,9 @@ SetBatchLines, -1                ;全速运行,且因为全速运行,部分代�
 CheckPermission1()
 CheckWindow(win_class, win_title)
 MsgBox, %win_title% 出现!!!
-global CapSave = False
+global CapSave := False
 global PrintedScn := 0
+global letters := "!@#$%^&-+=1234567890aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
 If Not InStr(FileExist("游戏截图"), "D")
     FileCreateDir, 游戏截图
 ;==================================================================================
@@ -47,7 +48,7 @@ CheckWindow(ByRef ClassName, ByRef TitleName)
         WinGetTitle, Title_Name, ahk_class %Class_Name%
         MsgBox, 262148, 确认框/Confirm Box, %Title_Name% 是您需要的窗口标题吗?`nIs %Title_Name% the window title you want?
         IfMsgBox, Yes
-            confirmed = True
+            confirmed := True
             ClassName := Class_Name, TitleName := Title_Name
     } Until (confirmed && ClassName && TitleName)
 }
@@ -56,7 +57,7 @@ CheckWindow(ByRef ClassName, ByRef TitleName)
 ShotAndSave()
 {
     global win_class
-    If !WinExist("ahk_class" . win_class)
+    If !WinExist("ahk_class " . win_class)
     {
         MsgBox, 程序已退出/Program Exited
         ExitApp
@@ -69,7 +70,14 @@ ShotAndSave()
     cap_zoom := (PX + PW // 2 - PH // 2) . "|" . PY . "|" . PH . "|" . PH
     If (win_class = "CrossFire") && (WH_Rate > 1.7)
         cap_zoom := (PX + PW // 2 - PH * 2 // 3) . "|" . PY . "|" . PH * 4 // 3 . "|" . PH
-    Screenshot(A_ScriptDir . "\游戏截图\Screenshot_" . win_class . "_" . A_TickCount * A_MSec + A_NowUTC . ".bmp", cap_zoom)
+
+    randStr := SubStr("000000" . (A_TickCount / A_MSec), -5)
+    loop, 12
+    {
+        Random, randChar, 0, strlen(letters) - 1
+        randStr .= SubStr(letters, randChar, 1)
+    }
+    Screenshot(A_ScriptDir . "\游戏截图\SS_" . win_class . "_" . randStr . ".bmp", cap_zoom)
 }
 ;==================================================================================
 ;截图存图,screen: X|Y|W|H
