@@ -1,10 +1,8 @@
 from sys import exit, executable
-from win32api import mouse_event
 from keyboard import is_pressed
 from time import sleep, time
 from mss import mss, tools
 from ctypes import windll
-import pydirectinput
 import pywintypes
 import win32gui
 import os
@@ -24,13 +22,27 @@ def is_admin():
 
 
 def mouse_move_lr(num):
-    pydirectinput.click()
+    windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
+    windll.user32.mouse_event(0x0004, 0, 0, 0, 0)
+    sleep(0.5)
     for i in range(10):
-        pydirectinput.move(num, 0)
+        windll.user32.mouse_event(0x0001, num, 0, 0, 0)
         print(str('{:02.0f}'.format(i+1)), end='\r')
         sleep(0.5)
-    pydirectinput.click()
-    pydirectinput.move(num*-5, 0)
+    windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
+    windll.user32.mouse_event(0x0004, 0, 0, 0, 0)
+    sleep(0.5)
+    windll.user32.mouse_event(0x0001, num*-5, 0, 0, 0)
+
+    # MOUSEEVENTF_MOVE = 0x0001 # mouse move
+    # MOUSEEVENTF_LEFTDOWN = 0x0002 # left button down
+    # MOUSEEVENTF_LEFTUP = 0x0004 # left button up
+    # MOUSEEVENTF_RIGHTDOWN = 0x0008 # right button down
+    # MOUSEEVENTF_RIGHTUP = 0x0010 # right button up
+    # MOUSEEVENTF_MIDDLEDOWN = 0x0020 # middle button down
+    # MOUSEEVENTF_MIDDLEUP = 0x0040 # middle button up
+    # MOUSEEVENTF_WHEEL = 0x0800 # wheel button rolled
+    # MOUSEEVENTF_ABSOLUTE = 0x8000 # absolute move
 
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -55,7 +67,7 @@ with mss() as sct:
     client_rect = win32gui.GetClientRect(hwnd)
     corner_xy = win32gui.ClientToScreen(hwnd, (0, 0))
     monitor = {'top': corner_xy[1], 'left': corner_xy[0], 'width': client_rect[2] - client_rect[0], 'height': client_rect[3] - client_rect[1]}
-    print('Get start!!!')
+    print('Get start!!! ' + class_name)
     moved = 0
     while True:
         if is_pressed('left'):
