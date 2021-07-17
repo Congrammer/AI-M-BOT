@@ -24,14 +24,14 @@ def is_admin():
 def mouse_move_lr(num):
     windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
     windll.user32.mouse_event(0x0004, 0, 0, 0, 0)
-    sleep(0.5)
+    sleep(0.3)
     for i in range(10):
         windll.user32.mouse_event(0x0001, num, 0, 0, 0)
         print(str('{:02.0f}'.format(i+1)), end='\r')
-        sleep(0.5)
+        sleep(0.3)
     windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
     windll.user32.mouse_event(0x0004, 0, 0, 0, 0)
-    sleep(0.5)
+    sleep(0.3)
     windll.user32.mouse_event(0x0001, num*-5, 0, 0, 0)
 
     # MOUSEEVENTF_MOVE = 0x0001 # mouse move
