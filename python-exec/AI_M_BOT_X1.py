@@ -401,7 +401,7 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
 
     # 不分敌友射击
     if win_class != 'CrossFire':
-        if move_range <= ranges or go_fire:
+        if move_range < ranges or go_fire:
             if (time() * 1000 - up_time[0]) > rate:
                 if not GetAsyncKeyState(VK_LBUTTON):
                     windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
