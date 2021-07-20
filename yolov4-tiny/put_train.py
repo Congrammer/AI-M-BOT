@@ -36,12 +36,12 @@ if __name__ == '__main__':
             marked += 1
 
     for files in tqdm(os.listdir(final_path)):
-        file_names = files.replace('.jpg', '')
+        file_names, file_ext =  os.path.splitext(files)
         file_list.append(file_names)
         if random.randint(0, 999) >= 100:
-            train_file.write(file_names + '\n')  # 录入文件名
+            train_file.write(final_path + file_names + file_ext + '\n')  # 录入文件名
         else:
-            test_file.write(file_names + '\n')  # 录入文件名
+            test_file.write(final_path + file_names + file_ext + '\n')  # 录入文件名
         totals += 1
         if not file_names in label_list:
             file_create = open(label_path + file_names + '.txt', 'w')

@@ -61,7 +61,7 @@ if __name__ == '__main__':
     start_time = time()
 
     for pics in tqdm(os.listdir(pics_path)):
-        pic_names = pics.replace('.jpg', '')
+        pic_names, pic_ext = os.path.splitext(pics)
         file_create = open(prep_label_path + pic_names + '.txt', 'w')
         pictures = cv2.imdecode(np.fromfile(pics_path + pics, dtype=np.uint8), -1)
         # cv2.imshow('Show frame', pictures)

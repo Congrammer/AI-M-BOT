@@ -51,7 +51,7 @@ if __name__ == '__main__':
         if round(3 * image_size_w / 4 / image_size_h, 2) == 1.00:
             image_size_w = image_size_h
         image = cv2.resize(image_source, (image_size_w, image_size_h), 0, 0, cv2.INTER_LINEAR)  # 修改尺寸
-        cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])[1].tofile(target_path + file[0:file.find('.')] + '.jpg')  # 重命名并且保存
+        cv2.imencode('.png', image, [int(cv2.IMWRITE_PNG_COMPRESSION), 3])[1].tofile(target_path + file[0:file.find('.')] + '.png')  # 重命名并且保存
 
     print(f'批量处理完成，文件改时失败{fail_change_time}个')
     sleep(3)
