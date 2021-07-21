@@ -1,9 +1,9 @@
 import os
 
 # Current directory
-current_dir = os.path.dirname(os.path.abspath(__file__))
-current_dir += 'data/obj/'
-print(current_dir)
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# print(current_dir)
+current_dir = 'data/obj/'
 
 # Percentage of images to be used for the test set
 percentage_test = 10
