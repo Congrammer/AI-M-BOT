@@ -26,7 +26,7 @@ If Not InStr(FileExist("游戏截图"), "D")
     SoundBeep, 1000, 300
     CapSave := !CapSave
     If CapSave
-        SetTimer, ShotAndSave, 1500
+        SetTimer, ShotAndSave, 2000
     Else
     {
         SetTimer, ShotAndSave, Off
@@ -67,9 +67,9 @@ ShotAndSave()
     PrintedScn += 1
     show_PrintedScn := SubStr("000" . PrintedScn, -2)
     ToolTip, 正在截图中:%PX%|%PY%|%PW%|%PH% 比例%WH_Rate%:1 数量%show_PrintedScn%, PX, PY, 1
-    cap_zoom := (PX + PW // 2 - PH // 2) . "|" . PY . "|" . PH . "|" . PH
+    cap_zoom := (PX + PW // 2 - PH // 2) . "|" . PY + PH // 4 . "|" . PH . "|" . PH // 2
     If (win_class = "CrossFire") && (WH_Rate > 1.7)
-        cap_zoom := (PX + PW // 2 - PH * 2 // 3) . "|" . PY . "|" . PH * 4 // 3 . "|" . PH
+        cap_zoom := (PX + PW // 2 - PH * 2 // 3) . "|" . PY + PH // 4 . "|" . PH * 4 // 3 . "|" . PH // 2
 
     randStr := SubStr("000000" . (A_TickCount / A_MSec), -5)
     loop, 12

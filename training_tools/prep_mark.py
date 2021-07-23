@@ -38,8 +38,8 @@ def prep_box(layerOutputs, frame_width, frame_height):
                 boxes2.append(box)
                 confidences2.append(float(confidence))
 
-    indices1 = cv2.dnn.NMSBoxes(boxes1, confidences1, 0.5, 0.4)
-    indices2 = cv2.dnn.NMSBoxes(boxes2, confidences2, 0.5, 0.4)
+    indices1 = cv2.dnn.NMSBoxes(boxes1, confidences1, 0.4, 0.3)
+    indices2 = cv2.dnn.NMSBoxes(boxes2, confidences2, 0.4, 0.3)
 
     return indices1, indices2, boxes1, boxes2
 
@@ -48,8 +48,8 @@ if __name__ == '__main__':
     if not os.listdir(pics_path):
         exit(0)
 
-    CONFIG_FILE = './yolov4-tiny-cf02.cfg'
-    WEIGHT_FILE = './yolov4-tiny-cf02.weights'
+    CONFIG_FILE = './yolov4-tiny.cfg'
+    WEIGHT_FILE = './yolov4-tiny.weights'
 
     net = cv2.dnn.readNetFromDarknet(CONFIG_FILE, WEIGHT_FILE)
     net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
