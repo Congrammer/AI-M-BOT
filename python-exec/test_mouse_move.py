@@ -1,3 +1,4 @@
+from win32con import SPI_GETMOUSE, SPI_SETMOUSE
 from sys import exit, executable
 from keyboard import is_pressed
 from time import sleep, time
@@ -22,17 +23,22 @@ def is_admin():
 
 
 def mouse_move_lr(num):
+    DPI_Var = windll.user32.GetDpiForWindow(hwnd) / 96
+    enhanced_holdback = win32gui.SystemParametersInfo(SPI_GETMOUSE)
+    if enhanced_holdback[1]:
+        win32gui.SystemParametersInfo(SPI_SETMOUSE, [0, 0, 0], 0)
     windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
     windll.user32.mouse_event(0x0004, 0, 0, 0, 0)
     sleep(0.3)
     for i in range(10):
-        windll.user32.mouse_event(0x0001, num, 0, 0, 0)
+        windll.user32.mouse_event(0x0001, int(num/DPI_Var), 0, 0, 0)
         print(str('{:02.0f}'.format(i+1)), end='\r')
         sleep(0.3)
     windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
     windll.user32.mouse_event(0x0004, 0, 0, 0, 0)
     sleep(0.3)
-    windll.user32.mouse_event(0x0001, num*-5, 0, 0, 0)
+    windll.user32.mouse_event(0x0001, int(num*-5/DPI_Var), 0, 0, 0)
+    sleep(0.3)
 
     # MOUSEEVENTF_MOVE = 0x0001 # mouse move
     # MOUSEEVENTF_LEFTDOWN = 0x0002 # left button down
@@ -43,6 +49,9 @@ def mouse_move_lr(num):
     # MOUSEEVENTF_MIDDLEUP = 0x0040 # middle button up
     # MOUSEEVENTF_WHEEL = 0x0800 # wheel button rolled
     # MOUSEEVENTF_ABSOLUTE = 0x8000 # absolute move
+
+    if enhanced_holdback[1]:
+        win32gui.SystemParametersInfo(SPI_SETMOUSE, enhanced_holdback, 0)
 
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
