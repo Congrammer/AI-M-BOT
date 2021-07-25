@@ -26,7 +26,7 @@ If Not InStr(FileExist("游戏截图"), "D")
     SoundBeep, 1000, 300
     CapSave := !CapSave
     If CapSave
-        SetTimer, ShotAndSave, 2000
+        SetTimer, ShotAndSave, 1500
     Else
     {
         SetTimer, ShotAndSave, Off
