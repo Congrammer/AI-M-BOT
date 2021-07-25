@@ -354,7 +354,7 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
     if enhanced_holdback[1]:
         win32gui.SystemParametersInfo(SPI_SETMOUSE, [0, 0, 0], 0)
 
-    if fps_var:
+    if fps_var and arr[17]:
         if move_range > 5 * ranges:
             b = uniform(0.7 * b, 1.3 * b)
         a /= DPI_Var
@@ -427,6 +427,10 @@ def check_status(exit0, mouse):
     if GetAsyncKeyState(0x33) or GetAsyncKeyState(0x34):  # 3,4
         mouse = 0
         arr[15] = 0
+    if GetAsyncKeyState(0x46):  # F
+        arr[17] = 1
+    if GetAsyncKeyState(0x4A):  # J
+        arr[17] = 0
     if GetAsyncKeyState(VK_MENU) and platform != 'win32':  # Alt
         win_cap.update_window_info()
     if GetAsyncKeyState(0x50):  # P
@@ -457,7 +461,7 @@ def show_frames(output_pipe, array):
             show_str1 = 'Detected ' + str('{:02.0f}'.format(array[11])) + ' targets'
             show_str2 = 'Aiming at ' + fire_target_show[array[12]] + ' position'
             show_str3 = 'Fire rate is at ' + str('{:02.0f}'.format((10000 / (array[13] + 306)))) + ' RPS'
-            show_str4 = 'Please enjoy coding ^_^'
+            show_str4 = 'Please enjoy coding ^_^' if array[17] else 'Please enjoy coding @_@'
             if show_img.any():
                 show_img = cv2.resize(show_img, (array[5], array[5]))
                 img_ex = cv2.resize(img_ex, (array[5], int(array[5] / 2)))
@@ -540,8 +544,7 @@ if __name__ == '__main__':
             print('呵呵...请重新选择')
 
     # 初始化变量以及提升进程优先级
-    run_platform = platform
-    if run_platform == 'win32':
+    if platform == 'win32':
         pid = GetCurrentProcessId()
         handle = OpenProcess(PROCESS_ALL_ACCESS, True, pid)
         SetPriorityClass(handle, ABOVE_NORMAL_PRIORITY_CLASS)
@@ -579,6 +582,7 @@ if __name__ == '__main__':
     14 敌人近否
     15 所持武器
     16 指向身体
+    17 自瞄自火
     '''
 
     show_proc = Process(target=show_frames, args=(frame_output, arr,))
@@ -597,6 +601,7 @@ if __name__ == '__main__':
     arr[14] = 0  # 敌人近否
     arr[15] = 0  # 所持武器(0无1主2副)
     arr[16] = 0  # 指向身体
+    arr[17] = 1  # 自瞄/自火
     detect1_proc = Process(target=detection1, args=(queue, arr, frame_input,))
     if not MP_setting:
         detect2_proc = Process(target=detection2, args=(queue, arr,))
@@ -635,7 +640,7 @@ if __name__ == '__main__':
 
     while True:
         # 选择截图方式
-        screenshot = (win_cap.get_screenshot() if run_platform == 'win32' else win_cap.grab_screenshot())
+        screenshot = (win_cap.get_screenshot() if platform == 'win32' else win_cap.grab_screenshot())
 
         try:
             screenshot.any()
