@@ -26,11 +26,16 @@ If Not InStr(FileExist("游戏截图"), "D")
     SoundBeep, 1000, 300
     CapSave := !CapSave
     If CapSave
-        SetTimer, ShotAndSave, 1500
+    {
+        pToken := Gdip_Startup()
+        SetTimer, ShotAndSave, 2000
+    }
     Else
     {
         SetTimer, ShotAndSave, Off
         PrintedScn := 0
+        HyperSleep(2000)
+        Gdip_Shutdown(pToken)
         ToolTip, , , , 1
     }
 Return
@@ -83,13 +88,13 @@ ShotAndSave()
 ;截图存图,screen: X|Y|W|H
 Screenshot(outfile, screen)
 {
-    pToken := Gdip_Startup()
+    global pToken ;:= Gdip_Startup()
     pBitmap := Gdip_BitmapFromScreen(screen)
-    E1 := Gdip_LockBits(pBitmap, 0, 0, Gdip_GetImageWidth(pBitmap), Gdip_GetImageHeight(pBitmap), Stride, Scan0, BitmapData)
+    ;E1 := Gdip_LockBits(pBitmap, 0, 0, Gdip_GetImageWidth(pBitmap), Gdip_GetImageHeight(pBitmap), Stride, Scan0, BitmapData)
     Gdip_SaveBitmapToFile(pBitmap, outfile, 100)
-    Gdip_UnlockBits(pBitmap, BitmapData)
+    ;Gdip_UnlockBits(pBitmap, BitmapData)
     Gdip_DisposeImage(pBitmap)
-    Gdip_Shutdown(pToken)
+    ;Gdip_Shutdown(pToken)
 }
 ;==================================================================================
 ;检查脚本执行权限,只有以管理员权限或以UI Access运行才能正常工作
