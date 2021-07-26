@@ -18,7 +18,7 @@ CheckWindow(win_class, win_title)
 MsgBox, %win_title% 出现!!!
 global CapSave := False
 global PrintedScn := 0
-global letters := "!@#$%^&-+=1234567890aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
+global letters := "!@$%^&-+=1234567890aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
 If Not InStr(FileExist("游戏截图"), "D")
     FileCreateDir, 游戏截图
 ;==================================================================================

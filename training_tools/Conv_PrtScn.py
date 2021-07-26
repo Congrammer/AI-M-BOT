@@ -44,6 +44,8 @@ if __name__ == '__main__':
 
     fail_change_time = 0
     for file in tqdm(os.listdir(source_path)):
+        if not os.path.isfile(source_path + file):
+            continue
         image_source = cv2.imdecode(np.fromfile(source_path + file, dtype=np.uint8), -1)  # 读取图片
         if RandomFileTime(source_path + file):
             fail_change_time += 1
