@@ -22,7 +22,7 @@ global letters := "!@$%^&-+=1234567890aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuU
 If Not InStr(FileExist("游戏截图"), "D")
     FileCreateDir, 游戏截图
 ;==================================================================================
-~*PrintScreen Up::
+~*F8::
     SoundBeep, 1000, 300
     CapSave := !CapSave
     If CapSave
@@ -38,6 +38,21 @@ If Not InStr(FileExist("游戏截图"), "D")
         Gdip_Shutdown(pToken)
         ToolTip, , , , 1
     }
+Return
+
+~*XButton1::
+~*XButton2::
+    pToken := Gdip_Startup()
+    ShotAndSave()
+Return
+
+~*XButton1 Up::
+~*XButton2 Up::
+    Gdip_Shutdown(pToken)
+Return
+
+~*Esc::
+    ToolTip, , , , 1
 Return
 ;==================================================================================
 ;找到并由使用者确认游戏窗口
@@ -90,11 +105,8 @@ Screenshot(outfile, screen)
 {
     global pToken ;:= Gdip_Startup()
     pBitmap := Gdip_BitmapFromScreen(screen)
-    ;E1 := Gdip_LockBits(pBitmap, 0, 0, Gdip_GetImageWidth(pBitmap), Gdip_GetImageHeight(pBitmap), Stride, Scan0, BitmapData)
     Gdip_SaveBitmapToFile(pBitmap, outfile, 100)
-    ;Gdip_UnlockBits(pBitmap, BitmapData)
     Gdip_DisposeImage(pBitmap)
-    ;Gdip_Shutdown(pToken)
 }
 ;==================================================================================
 ;检查脚本执行权限,只有以管理员权限或以UI Access运行才能正常工作
