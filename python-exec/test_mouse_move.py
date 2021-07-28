@@ -1,9 +1,10 @@
-from win32con import SPI_GETMOUSE, SPI_SETMOUSE
+from win32con import SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
 from sys import exit, executable
 from keyboard import is_pressed
 from time import sleep, time
 from mss import mss, tools
 from ctypes import windll
+import pydirectinput
 import pywintypes
 import win32gui
 import os
@@ -27,31 +28,25 @@ def mouse_move_lr(num):
     enhanced_holdback = win32gui.SystemParametersInfo(SPI_GETMOUSE)
     if enhanced_holdback[1]:
         win32gui.SystemParametersInfo(SPI_SETMOUSE, [0, 0, 0], 0)
-    windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
-    windll.user32.mouse_event(0x0004, 0, 0, 0, 0)
+    mouse_speed = win32gui.SystemParametersInfo(SPI_GETMOUSESPEED)
+    if mouse_speed != 10:
+        win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
+
+    pydirectinput.leftClick()
     sleep(0.3)
     for i in range(10):
-        windll.user32.mouse_event(0x0001, int(num/DPI_Var), 0, 0, 0)
+        pydirectinput.moveRel(int(num/DPI_Var), 0, relative=True)
         print(str('{:02.0f}'.format(i+1)), end='\r')
         sleep(0.3)
-    windll.user32.mouse_event(0x0002, 0, 0, 0, 0)
-    windll.user32.mouse_event(0x0004, 0, 0, 0, 0)
+    pydirectinput.leftClick()
     sleep(0.3)
-    windll.user32.mouse_event(0x0001, int(num*-5/DPI_Var), 0, 0, 0)
+    pydirectinput.moveRel(-int(num*5/DPI_Var), 0, relative=True)
     sleep(0.3)
-
-    # MOUSEEVENTF_MOVE = 0x0001 # mouse move
-    # MOUSEEVENTF_LEFTDOWN = 0x0002 # left button down
-    # MOUSEEVENTF_LEFTUP = 0x0004 # left button up
-    # MOUSEEVENTF_RIGHTDOWN = 0x0008 # right button down
-    # MOUSEEVENTF_RIGHTUP = 0x0010 # right button up
-    # MOUSEEVENTF_MIDDLEDOWN = 0x0020 # middle button down
-    # MOUSEEVENTF_MIDDLEUP = 0x0040 # middle button up
-    # MOUSEEVENTF_WHEEL = 0x0800 # wheel button rolled
-    # MOUSEEVENTF_ABSOLUTE = 0x8000 # absolute move
 
     if enhanced_holdback[1]:
         win32gui.SystemParametersInfo(SPI_SETMOUSE, enhanced_holdback, 0)
+    if mouse_speed != 10:
+        win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, mouse_speed, 0)
 
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -61,6 +56,7 @@ if not is_admin():
     restart()
 
 while not find_window:
+    sleep(3)
     hwnd_active = win32gui.GetForegroundWindow()
     try:
         title_name = win32gui.GetWindowText(hwnd_active)
@@ -69,7 +65,6 @@ while not find_window:
         find_window = (1 if result == 6 else 0)
     except pywintypes.error:
         continue
-    sleep(3)
 
 with mss() as sct:
     hwnd = win32gui.FindWindow(class_name, None)
