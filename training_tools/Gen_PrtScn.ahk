@@ -21,7 +21,37 @@ global PrintedScn := 0
 global letters := "!@$%^&-+=1234567890aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
 If Not InStr(FileExist("游戏截图"), "D")
     FileCreateDir, 游戏截图
+CheckPosition1(BX, BY, BW, BH, win_class)
+BM := 1
+if instr(win_title, "穿越火线")
+    BM := 4/3
+boxw := round(BH * BM)
+boxh := BH // 2
+showx := BX + (BW - BH * BM) // 2 - 1
+showy := BY + BH // 4 - 1
+showw := boxw + 2
+showh := boxh + 2
+boundingbox := (boxw//2 + 1)"-0 0-0 0-"(boxh+2)" "(boxw+2)"-"(boxh+2)" "(boxw+2)"-0 "(boxw//2 + 1)"-0 "(boxw//2 + 1)"-1 "(boxw+1)"-1 "(boxw+1)"-"(boxh+1)" 1-"(boxh+1)" 1-1 "(boxw//2 + 1)"-1 " (boxw//2 + 1)"-"(boxh//2 + 1)" "(boxw//2 + 1 - boxh//15)"-"(boxh//2 + 1)" "(boxw//2 + 1 - boxh//15)"-"(boxh//2 + 2)" "(boxw//2 + 1)"-"(boxh//2 + 2)" "(boxw//2 + 1)"-"(boxh//2 + 2 + boxh//15)" "(boxw//2 + 2)"-"(boxh//2 + 2 + boxh//15)" "(boxw//2 + 2)"-"(boxh//2 + 2)" "(boxw//2 + 2 + boxh//15)"-"(boxh//2 + 2)" "(boxw//2 + 2 + boxh//15)"-"(boxh//2 + 1)" "(boxw//2 + 1)"-"(boxh//2 + 1)
+Gui, box: New, +lastfound +ToolWindow -Caption +AlwaysOnTop +Hwndbb -DPIScale, cshp001
+Gui, box: Color, 00FFFF ;#00FFFF
+Gui, box: Show, x%showx% y%showy% w%showw% h%showh% NA
+WinSet, Region, %boundingbox%, ahk_id %bb%
+WinSet, Transparent, 255, ahk_id %bb%
+WinSet, ExStyle, +0x20 +0x8; 鼠标穿透以及最顶端
 ;==================================================================================
+~*End::ExitApp
+
+~*RAlt::
+    Gui, box: Show, Hide
+Return
+
+~*RAlt Up::
+    CheckPosition1(BX, BY, BW, BH, win_class)
+    showx := BX + (BW - BH * BM) // 2 - 1
+    showy := BY + BH // 4 - 1
+    Gui, box: Show, x%showx% y%showy% w%showw% h%showh% NA
+Return
+
 ~*F8::
     SoundBeep, 1000, 300
     CapSave := !CapSave
@@ -53,6 +83,7 @@ Return
 
 ~*Esc::
     ToolTip, , , , 1
+    PrintedScn := 0
 Return
 ;==================================================================================
 ;找到并由使用者确认游戏窗口
