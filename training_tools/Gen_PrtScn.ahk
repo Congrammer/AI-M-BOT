@@ -16,6 +16,7 @@ SetBatchLines, -1                ;全速运行,且因为全速运行,部分代�
 CheckPermission1()
 CheckWindow(win_class, win_title)
 MsgBox, %win_title% 出现!!!
+global ReadyShot := True
 global CapSave := False
 global PrintedScn := 0
 global letters := "!@$%^&-+=1234567890aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
@@ -25,13 +26,13 @@ CheckPosition1(BX, BY, BW, BH, win_class)
 BM := 1
 if instr(win_title, "穿越火线")
     BM := 4/3
-boxw := round(BH * BM)
-boxh := BH // 2
-showx := BX + (BW - BH * BM) // 2 - 1
-showy := BY + BH // 4 - 1
+boxh := BH // 3
+boxw := boxh * 16 * BM // 9
+showx := BX + (BW - boxw) // 2 - 1
+showy := BY + (BH - boxh) // 2 - 1
 showw := boxw + 2
 showh := boxh + 2
-boundingbox := (boxw//2 + 1)"-0 0-0 0-"(boxh+2)" "(boxw+2)"-"(boxh+2)" "(boxw+2)"-0 "(boxw//2 + 1)"-0 "(boxw//2 + 1)"-1 "(boxw+1)"-1 "(boxw+1)"-"(boxh+1)" 1-"(boxh+1)" 1-1 "(boxw//2 + 1)"-1 " (boxw//2 + 1)"-"(boxh//2 + 1)" "(boxw//2 + 1 - boxh//15)"-"(boxh//2 + 1)" "(boxw//2 + 1 - boxh//15)"-"(boxh//2 + 2)" "(boxw//2 + 1)"-"(boxh//2 + 2)" "(boxw//2 + 1)"-"(boxh//2 + 2 + boxh//15)" "(boxw//2 + 2)"-"(boxh//2 + 2 + boxh//15)" "(boxw//2 + 2)"-"(boxh//2 + 2)" "(boxw//2 + 2 + boxh//15)"-"(boxh//2 + 2)" "(boxw//2 + 2 + boxh//15)"-"(boxh//2 + 1)" "(boxw//2 + 1)"-"(boxh//2 + 1)
+boundingbox := (Ceil(boxw/2) + 1)"-0 0-0 0-"(boxh+2)" "(boxw+2)"-"(boxh+2)" "(boxw+2)"-0 "(Ceil(boxw/2) + 1)"-0 "(Ceil(boxw/2) + 1)"-1 "(boxw+1)"-1 "(boxw+1)"-"(boxh+1)" 1-"(boxh+1)" 1-1 "(Ceil(boxw/2) + 1)"-1 " (Ceil(boxw/2) + 1)"-"(Ceil(boxh/2) + 1)" "(Ceil(boxw/2) + 1 - boxh//10)"-"(Ceil(boxh/2) + 1)" "(Ceil(boxw/2) + 1 - boxh//10)"-"(Ceil(boxh/2) + 2)" "(Ceil(boxw/2) + 1)"-"(Ceil(boxh/2) + 2)" "(Ceil(boxw/2) + 1)"-"(Ceil(boxh/2) + 2 + boxh//10)" "(Ceil(boxw/2) + 2)"-"(Ceil(boxh/2) + 2 + boxh//10)" "(Ceil(boxw/2) + 2)"-"(Ceil(boxh/2) + 2)" "(Ceil(boxw/2) + 2 + boxh//10)"-"(Ceil(boxh/2) + 2)" "(Ceil(boxw/2) + 2 + boxh//10)"-"(Ceil(boxh/2) + 1)" "(Ceil(boxw/2) + 1)"-"(Ceil(boxh/2) + 1)
 Gui, box: New, +lastfound +ToolWindow -Caption +AlwaysOnTop +Hwndbb -DPIScale, cshp001
 Gui, box: Color, 00FFFF ;#00FFFF
 Gui, box: Show, x%showx% y%showy% w%showw% h%showh% NA
@@ -46,9 +47,11 @@ WinSet, ExStyle, +0x20 +0x8; 鼠标穿透以及最顶端
 Return
 
 ~*RAlt Up::
+    If !WinExist("ahk_class "win_class)
+        ExitApp
     CheckPosition1(BX, BY, BW, BH, win_class)
-    showx := BX + (BW - BH * BM) // 2 - 1
-    showy := BY + BH // 4 - 1
+    showx := BX + (BW - boxw) // 2 - 1
+    showy := BY + (BH - boxh) // 2 - 1
     Gui, box: Show, x%showx% y%showy% w%showw% h%showh% NA
 Return
 
@@ -70,15 +73,22 @@ Return
     }
 Return
 
+~*LButton::
 ~*XButton1::
 ~*XButton2::
-    pToken := Gdip_Startup()
-    ShotAndSave()
+    If ReadyShot
+    {
+        pToken := Gdip_Startup()
+        ShotAndSave()
+        ReadyShot := False
+    }
 Return
 
+~*LButton Up::
 ~*XButton1 Up::
 ~*XButton2 Up::
     Gdip_Shutdown(pToken)
+    ReadyShot := True
 Return
 
 ~*Esc::
@@ -107,20 +117,18 @@ CheckWindow(ByRef ClassName, ByRef TitleName)
 ;重复截图
 ShotAndSave()
 {
-    global win_class
+    global win_class, boxw, boxh
     If !WinExist("ahk_class " . win_class)
     {
         MsgBox, 程序已退出/Program Exited
         ExitApp
     }
     CheckPosition1(PX, PY, PW, PH, win_class)
-    WH_Rate := Round(PW / PH, 3)
     PrintedScn += 1
     show_PrintedScn := SubStr("000" . PrintedScn, -2)
-    ToolTip, 正在截图中:%PX%|%PY%|%PW%|%PH% 比例%WH_Rate%:1 数量%show_PrintedScn%, PX, PY, 1
-    cap_zoom := (PX + PW // 2 - PH // 2) . "|" . PY + PH // 4 . "|" . PH . "|" . PH // 2
-    If (win_class = "CrossFire") && (WH_Rate > 1.7)
-        cap_zoom := (PX + PW // 2 - PH * 2 // 3) . "|" . PY + PH // 4 . "|" . PH * 4 // 3 . "|" . PH // 2
+    ToolTip, 正在截图中:%PX%|%PY%|%PW%|%PH% 数量%show_PrintedScn%, PX, PY, 1
+
+    cap_zoom := PX + (PW - boxw) // 2 . "|" . PY + (PH - boxh) // 2 . "|" . boxw . "|" . boxh
 
     randStr := SubStr("000000" . (A_TickCount / A_MSec), -5)
     loop, 12

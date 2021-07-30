@@ -25,13 +25,13 @@ CheckPosition1(BX, BY, BW, BH, win_class)
 BM := 1
 if instr(win_title, "穿越火线")
     BM := 4/3
-boxw := round(BH * BM)
-boxh := BH // 2
-showx := BX + (BW - BH * BM) // 2 - 1
-showy := BY + BH // 4 - 1
+boxh := BH // 3
+boxw := boxh * 16 * BM // 9
+showx := BX + (BW - boxw) // 2 - 1
+showy := BY + (BH - boxh) // 2 - 1
 showw := boxw + 2
 showh := boxh + 2
-boundingbox := (boxw//2 + 1)"-0 0-0 0-"(boxh+2)" "(boxw+2)"-"(boxh+2)" "(boxw+2)"-0 "(boxw//2 + 1)"-0 "(boxw//2 + 1)"-1 "(boxw+1)"-1 "(boxw+1)"-"(boxh+1)" 1-"(boxh+1)" 1-1 "(boxw//2 + 1)"-1 " (boxw//2 + 1)"-"(boxh//2 + 1)" "(boxw//2 + 1 - boxh//15)"-"(boxh//2 + 1)" "(boxw//2 + 1 - boxh//15)"-"(boxh//2 + 2)" "(boxw//2 + 1)"-"(boxh//2 + 2)" "(boxw//2 + 1)"-"(boxh//2 + 2 + boxh//15)" "(boxw//2 + 2)"-"(boxh//2 + 2 + boxh//15)" "(boxw//2 + 2)"-"(boxh//2 + 2)" "(boxw//2 + 2 + boxh//15)"-"(boxh//2 + 2)" "(boxw//2 + 2 + boxh//15)"-"(boxh//2 + 1)" "(boxw//2 + 1)"-"(boxh//2 + 1)
+boundingbox := (Ceil(boxw/2) + 1)"-0 0-0 0-"(boxh+2)" "(boxw+2)"-"(boxh+2)" "(boxw+2)"-0 "(Ceil(boxw/2) + 1)"-0 "(Ceil(boxw/2) + 1)"-1 "(boxw+1)"-1 "(boxw+1)"-"(boxh+1)" 1-"(boxh+1)" 1-1 "(Ceil(boxw/2) + 1)"-1 " (Ceil(boxw/2) + 1)"-"(Ceil(boxh/2) + 1)" "(Ceil(boxw/2) + 1 - boxh//10)"-"(Ceil(boxh/2) + 1)" "(Ceil(boxw/2) + 1 - boxh//10)"-"(Ceil(boxh/2) + 2)" "(Ceil(boxw/2) + 1)"-"(Ceil(boxh/2) + 2)" "(Ceil(boxw/2) + 1)"-"(Ceil(boxh/2) + 2 + boxh//10)" "(Ceil(boxw/2) + 2)"-"(Ceil(boxh/2) + 2 + boxh//10)" "(Ceil(boxw/2) + 2)"-"(Ceil(boxh/2) + 2)" "(Ceil(boxw/2) + 2 + boxh//10)"-"(Ceil(boxh/2) + 2)" "(Ceil(boxw/2) + 2 + boxh//10)"-"(Ceil(boxh/2) + 1)" "(Ceil(boxw/2) + 1)"-"(Ceil(boxh/2) + 1)
 Gui, box: New, +lastfound +ToolWindow -Caption +AlwaysOnTop +Hwndbb -DPIScale, cshp001
 Gui, box: Color, 00FFFF ;#00FFFF
 Gui, box: Show, x%showx% y%showy% w%showw% h%showh% NA
@@ -49,8 +49,8 @@ Return
     If !WinExist("ahk_id "win_id)
         ExitApp
     CheckPosition1(BX, BY, BW, BH, win_class)
-    showx := BX + (BW - BH * BM) // 2 - 1
-    showy := BY + BH // 4 - 1
+    showx := BX + (BW - boxw) // 2 - 1
+    showy := BY + (BH - boxh) // 2 - 1
     Gui, box: Show, x%showx% y%showy% w%showw% h%showh% NA
 Return
 
