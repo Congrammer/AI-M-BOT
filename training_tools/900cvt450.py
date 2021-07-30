@@ -55,9 +55,8 @@ if __name__ == '__main__':
                     file_create.write('\n')
 
             file_create.close()
-        '''
+
         else:
             pics = cv2.imdecode(np.fromfile(source_path + files, dtype=np.uint8), -1)
             crop_img = pics[int(pics.shape[1] / 4):int(pics.shape[1] * 3 / 4), 0:pics.shape[0]]
             cv2.imencode('.jpg', crop_img, [int(cv2.IMWRITE_JPEG_QUALITY), 100])[1].tofile(target_path + files[0:files.find('.')] + '.jpg')  # 重命名并且保存
-        '''

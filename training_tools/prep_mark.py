@@ -18,8 +18,10 @@ if not os.path.isdir(pics_path):
 def prep_box(layerOutputs, frame_width, frame_height):
     boxes1 = []
     boxes2 = []
+    boxes3 = []
     confidences1 = []
     confidences2 = []
+    confidences3 = []
     for output in layerOutputs:
         for detection in output:
             scores = detection[5:]
@@ -31,17 +33,24 @@ def prep_box(layerOutputs, frame_width, frame_height):
                 box = [int(centerX), int(centerY), int(width), int(height)]
                 boxes1.append(box)
                 confidences1.append(float(confidence))
-            elif confidence > 0.1 and classID == 1:
+            if confidence > 0.1 and classID == 1:
                 box = detection[:4] * np.array([frame_width, frame_height, frame_width, frame_height])
                 (centerX, centerY, width, height) = box.astype("int")
                 box = [int(centerX), int(centerY), int(width), int(height)]
                 boxes2.append(box)
                 confidences2.append(float(confidence))
+            if confidence > 0.1 and classID == 2:
+                box = detection[:4] * np.array([frame_width, frame_height, frame_width, frame_height])
+                (centerX, centerY, width, height) = box.astype("int")
+                box = [int(centerX), int(centerY), int(width), int(height)]
+                boxes3.append(box)
+                confidences3.append(float(confidence))
 
     indices1 = cv2.dnn.NMSBoxes(boxes1, confidences1, 0.4, 0.3)
     indices2 = cv2.dnn.NMSBoxes(boxes2, confidences2, 0.4, 0.3)
+    indices3 = cv2.dnn.NMSBoxes(boxes3, confidences3, 0.4, 0.3)
 
-    return indices1, indices2, boxes1, boxes2
+    return indices1, indices2, indices3, boxes1, boxes2, boxes3
 
 
 if __name__ == '__main__':
@@ -68,11 +77,11 @@ if __name__ == '__main__':
         # cv2.waitKey(1)
 
         frame_height, frame_width = pictures.shape[:2]
-        blob = cv2.dnn.blobFromImage(pictures, 1 / 255.0, (608, 608), swapRB=False, crop=False)
+        blob = cv2.dnn.blobFromImage(pictures, 1 / 255.0, (288, 512), swapRB=False, crop=False)
         net.setInput(blob)
         layerOutputs = net.forward(ln)
 
-        indices1, indices2, boxes1, boxes2 = prep_box(layerOutputs, frame_width, frame_height)
+        indices1, indices2, indices3, boxes1, boxes2, boxes3 = prep_box(layerOutputs, frame_width, frame_height)
         if len(indices1) > 0:
             for i in indices1.flatten():
                 (x, y) = (boxes1[i][0], boxes1[i][1])
@@ -84,6 +93,12 @@ if __name__ == '__main__':
                 (x, y) = (boxes2[i][0], boxes2[i][1])
                 (w, h) = (boxes2[i][2], boxes2[i][3])
                 file_create.write(f'1 {(x/frame_width):.6f} {(y/frame_height):.6f} {(w/frame_width):.6f} {(h/frame_height):.6f}\n')
+
+        if len(indices3) > 0:
+            for i in indices3.flatten():
+                (x, y) = (boxes3[i][0], boxes3[i][1])
+                (w, h) = (boxes3[i][2], boxes3[i][3])
+                file_create.write(f'2 {(x/frame_width):.6f} {(y/frame_height):.6f} {(w/frame_width):.6f} {(h/frame_height):.6f}\n')
 
         file_create.close()
 
