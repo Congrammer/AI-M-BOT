@@ -59,6 +59,8 @@ Return
     Gui, box: Show, x%showx% y%showy% w%showw% h%showh% NA
 Return
 
+#If PS_Service_On && WinActive("ahk_class "win_class) ;以下的热键需要相应条件才能激活
+
 ~*F8::
     SoundBeep, 1000, 300
     CapSave := !CapSave
@@ -80,6 +82,8 @@ Return
 ~*LButton::
 ~*XButton1::
 ~*XButton2::
+    If GetKeyState("LButton", "P") && !GetKeyState("1", "P")
+        Return
     If ReadyShot
     {
         pToken := Gdip_Startup()
