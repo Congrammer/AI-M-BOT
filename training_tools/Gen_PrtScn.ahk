@@ -13,6 +13,7 @@ SetWorkingDir, %A_ScriptDir%     ;保证一致的脚本起始工作目录
 Process, Priority, , A           ;进程高优先级
 SetBatchLines, -1                ;全速运行,且因为全速运行,部分代码不得不调整
 ;==================================================================================
+PS_Service_On := False
 CheckPermission1()
 CheckWindow(win_class, win_title)
 MsgBox, %win_title% 出现!!!
@@ -39,8 +40,11 @@ Gui, box: Show, x%showx% y%showy% w%showw% h%showh% NA
 WinSet, Region, %boundingbox%, ahk_id %bb%
 WinSet, Transparent, 225, ahk_id %bb%
 WinSet, ExStyle, +0x20 +0x8; 鼠标穿透以及最顶端
+PS_Service_On := True
 ;==================================================================================
 ~*End::ExitApp
+
+#If PS_Service_On ;以下的热键需要相应条件才能激活
 
 ~*RAlt::
     Gui, box: Show, Hide
