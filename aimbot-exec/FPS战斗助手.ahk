@@ -36,7 +36,7 @@ Gui, box: New, +lastfound +ToolWindow -Caption +AlwaysOnTop +Hwndbb -DPIScale, c
 Gui, box: Color, 00FFFF ;#00FFFF
 Gui, box: Show, x%showx% y%showy% w%showw% h%showh% NA
 WinSet, Region, %boundingbox%, ahk_id %bb%
-WinSet, Transparent, 255, ahk_id %bb%
+WinSet, Transparent, 225, ahk_id %bb%
 WinSet, ExStyle, +0x20 +0x8; 鼠标穿透以及最顶端
 ;==================================================================================
 ~*End::ExitApp
