@@ -17,13 +17,13 @@ PS_Service_On := False
 CheckPermission1()
 CheckWindow(win_class, win_title)
 MsgBox, %win_title% 出现!!!
+If Not InStr(FileExist("游戏截图\"win_class), "D")
+    FileCreateDir, 游戏截图\%win_class%
 FileAppend, %win_title%, %A_ScriptDir%\游戏截图\%win_class%\游戏名称.txt, UTF-8
 global ReadyShot := True
 global CapSave := False
 global PrintedScn := 0
 global letters := "!@$%^&-+=1234567890aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
-If Not InStr(FileExist("游戏截图"), "D")
-    FileCreateDir, 游戏截图
 CheckPosition1(BX, BY, BW, BH, win_class)
 BM := 1
 if instr(win_title, "穿越火线")
