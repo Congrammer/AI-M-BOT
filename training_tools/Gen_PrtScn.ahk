@@ -17,6 +17,7 @@ PS_Service_On := False
 CheckPermission1()
 CheckWindow(win_class, win_title)
 MsgBox, %win_title% 出现!!!
+FileAppend, %win_title%, %A_ScriptDir%\游戏截图\游戏名称.txt, UTF-8
 global ReadyShot := True
 global CapSave := False
 global PrintedScn := 0
