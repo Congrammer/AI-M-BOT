@@ -23,7 +23,7 @@ FileAppend, %win_title%, %A_ScriptDir%\游戏截图\%win_class%\游戏名称.txt
 global ReadyShot := True
 global CapSave := False
 global PrintedScn := 0
-global letters := "!@$%^&-+=1234567890aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
+global letters := "!@$%^-+=1234567890aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ"
 CheckPosition1(BX, BY, BW, BH, win_class)
 BM := 1
 if instr(win_title, "穿越火线")
