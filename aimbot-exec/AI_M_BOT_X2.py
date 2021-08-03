@@ -162,6 +162,7 @@ class FrameDetection:
 
         # 检测并设置在GPU上运行图像识别
         if cv2.cuda.getCudaEnabledDeviceCount():
+            self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
             gpu_eval = check_gpu(gpu_level)
             if gpu_eval == 2:
                 self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
