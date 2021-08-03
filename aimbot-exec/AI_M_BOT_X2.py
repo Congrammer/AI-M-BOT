@@ -149,7 +149,7 @@ class FrameDetection:
 
         self.win_class_name = win32gui.GetClassName(hwnd_value)
         self.std_confidence = {
-            'Valve001': 0.42,
+            'Valve001': 0.45,
             'CrossFire': 0.45,
         }.get(self.win_class_name, 0.5)
 
