@@ -21,6 +21,7 @@ CheckPermission1()
 CheckWindow(win_class, win_title, win_id)
 MsgBox, %win_title%出现!!!
 IsJumping := False
+w_pressed := s_pressed := a_pressed := d_pressed := 0
 CheckPosition1(BX, BY, BW, BH, win_class)
 BM := 1
 if instr(win_title, "穿越火线")
@@ -57,38 +58,72 @@ Return
 #If WinActive("ahk_class Valve001") || WinActive("ahk_class Valorant")
 
 ~*w::
-    CheckPressTime("w", state_w)
+    If GetKeyState("w", "P")
+    {
+        CheckPressTime("w", state_w)
+        w_pressed := 1
+    }
 Return
 
 ~*w Up::
-    Reverse_move("S", state_w)
+    If w_pressed
+    {
+        Reverse_move("S", state_w)
+        w_pressed := 0
+    }
 Return
 
 ~*s::
-    CheckPressTime("s", state_s)
+    If GetKeyState("s", "P")
+    {
+        CheckPressTime("s", state_s)
+        s_pressed := 1
+    }
 Return
 
 ~*s Up::
-    Reverse_move("W", state_s)
+    If s_pressed
+    {
+        Reverse_move("W", state_s)
+        s_pressed := 0
+    }
 Return
 
 ~*a::
-    CheckPressTime("a", state_a)
+    If GetKeyState("a", "P")
+    {
+        CheckPressTime("a", state_a)
+        a_pressed := 1
+    }
 Return
 
 ~*a Up::
-    Reverse_move("D", state_a)
+    If a_pressed
+    {
+        Reverse_move("d", state_a)
+        a_pressed := 0
+    }
 Return
 
 ~*d::
-    CheckPressTime("d", state_d)
+    If GetKeyState("d", "P")
+    {
+        CheckPressTime("d", state_d)
+        d_pressed := 1
+    }
 Return
 
 ~*d Up::
-    Reverse_move("A", state_d)
+    If d_pressed
+    {
+        Reverse_move("a", state_d)
+        d_pressed := 0
+    }
 Return
 
 ~*Space::
+    If !GetKeyState("Space", "P")
+        Return
     IsJumping := True
     HyperSleep(600)
     IsJumping := False
@@ -190,12 +225,12 @@ CheckUIA1()
 ;拷贝自 https://www.reddit.com/r/AutoHotkey/comments/6zftle/process_name_from_pid/ ,通过进程ID得到进程完整路径
 GetProcessName(ProcessID)
 {
-    If (hProcess := DllCall("OpenProcess", "uint", 0x0410, "int", 0, "uint", ProcessID, "ptr"))
+    If (hProcess := DllCall("OpenProcess", "UInt", 0x0410, "Int", 0, "UInt", ProcessID, "Ptr"))
     {
         size := VarSetCapacity(buf, 0x0104 << 1, 0)
-        If (DllCall("psapi\GetModuleFileNameEx", "ptr", hProcess, "ptr", 0, "ptr", &buf, "uint", size))
-            Return StrGet(&buf), DllCall("CloseHandle", "ptr", hProcess)
-        DllCall("CloseHandle", "ptr", hProcess)
+        If (DllCall("psapi\GetModuleFileNameEx", "Ptr", hProcess, "Ptr", 0, "Ptr", &buf, "UInt", size))
+            Return StrGet(&buf), DllCall("CloseHandle", "Ptr", hProcess)
+        DllCall("CloseHandle", "Ptr", hProcess)
     }
     Return False
 }
@@ -206,21 +241,21 @@ CheckPosition1(ByRef Xcp, ByRef Ycp, ByRef Wcp, ByRef Hcp, class_name)
     WinGet, Window_ID, ID, ahk_class %class_name%
 
     VarSetCapacity(rect, 16)
-    DllCall("GetClientRect", "ptr", Window_ID, "ptr", &rect) ;内在宽高
-    Wcp := NumGet(rect, 8, "int")
-    Hcp := NumGet(rect, 12, "int")
+    DllCall("GetClientRect", "Ptr", Window_ID, "Ptr", &rect) ;内在宽高
+    Wcp := NumGet(rect, 8, "Int")
+    Hcp := NumGet(rect, 12, "Int")
 
     VarSetCapacity(WINDOWINFO, 60, 0)
-    DllCall("GetWindowInfo", "ptr", Window_ID, "ptr", &WINDOWINFO) ;内在XY
+    DllCall("GetWindowInfo", "Ptr", Window_ID, "Ptr", &WINDOWINFO) ;内在XY
     Xcp := NumGet(WINDOWINFO, 20, "Int")
     Ycp := NumGet(WINDOWINFO, 24, "Int")
 
     VarSetCapacity(Screen_Info, 156)
     DllCall("EnumDisplaySettingsA", Ptr, 0, UInt, -1, UInt, &Screen_Info) ;真实分辨率
-    Mon_boxw := NumGet(Screen_Info, 108, "int")
-    Mon_Hight := NumGet(Screen_Info, 112, "int")
+    Mon_Width := NumGet(Screen_Info, 108, "Int")
+    Mon_Hight := NumGet(Screen_Info, 112, "Int")
 
-    If (Wcp >= Mon_boxw) || (Hcp >= Mon_Hight) ;全屏检测,未知是否适应UHD不放大
+    If (Wcp >= Mon_Width) || (Hcp >= Mon_Hight) ;全屏检测,未知是否适应UHD不放大
     {
         CoordMode, Pixel, Client ;坐标相对活动窗口的客户端
         CoordMode, Mouse, Client
@@ -263,43 +298,81 @@ HyperSleep(value)
     }
 }
 ;==================================================================================
-;按键脚本,鉴于Input模式下单纯的send太快而开发
+;鼠标左右键按下
+mouse_down(key_name := "LButton")
+{
+    If !Instr(key_name, "Button")
+        Return False
+    Switch key_name
+    {
+        Case "LButton": DllCall("mouse_event", "UInt", 0x02) ;左键按下
+        Case "RButton": DllCall("mouse_event", "UInt", 0x08) ;右键按下
+    }
+}
+;==================================================================================
+;鼠标左右键抬起
+mouse_up(key_name := "LButton")
+{
+    If !Instr(key_name, "Button")
+        Return False
+    Switch key_name
+    {
+        Case "LButton": DllCall("mouse_event", "UInt", 0x04) ;左键弹起
+        Case "RButton": DllCall("mouse_event", "UInt", 0x10) ;右键弹起
+    }
+}
+;==================================================================================
+;键位按下
+key_down(key_name)
+{
+    If StrLen(key_name) == 1
+    {
+        If (Ord(key_name) > 64 && Ord(key_name) < 91)
+            DllCall("keybd_event", "Int", 16, "Int", 42, "Int", 0, "Int", 0) ;Shift
+    }
+    VirtualKey := GetKeyVK(key_name)
+    ScanCode := GetKeySC(key_name)
+    DllCall("keybd_event", "Int", VirtualKey, "Int", ScanCode, "Int", 0, "Int", 0)
+}
+;==================================================================================
+;键位弹起
+key_up(key_name)
+{
+    If StrLen(key_name) == 1
+    {
+        If (Ord(key_name) > 64 && Ord(key_name) < 91)
+            DllCall("keybd_event", "Int", 16, "Int", 42, "Int", 2, "Int", 0) ;Shift
+    }
+    VirtualKey := GetKeyVK(key_name)
+    ScanCode := GetKeySC(key_name)
+    DllCall("keybd_event", "Int", VirtualKey, "Int", ScanCode, "Int", 2, "Int", 0)
+}
+;==================================================================================
+;按键函数,鉴于Input模式下单纯的send速度不合要求而开发
 press_key(key_name, press_time, sleep_time)
 {
     ;本机鼠标延迟测试,包括按下弹起
     If InStr(key_name, "Button")
-        press_time -= 2.85, sleep_time -= 2.85
+        press_time -= 0.56, sleep_time -= 0.56
     Else
-    {
-        press_time -= 2.56, sleep_time -= 2.56
-        VirtualKey := GetKeyVK(key_name)
-        ScanCode := GetKeySC(key_name)
-    }
+        press_time -= 0.24, sleep_time -= 0.24
 
-    Suspend, On
     If !GetKeyState(key_name)
     {
-        Switch key_name
-        {
-            Case "LButton": DllCall("mouse_event", "UInt", 0x02) ;左键按下
-            Case "RButton": DllCall("mouse_event", "UInt", 0x08) ;右键按下
-            Default: DllCall("keybd_event", "Int", VirtualKey, "Int", ScanCode, "Int", 0, "Int", 0)
-        }
+        If InStr(key_name, "Button")
+            mouse_down(key_name)
+        Else
+            key_down(key_name)
     }
-    Suspend, Off
     HyperSleep(press_time)
 
-    Suspend, On
     If !GetKeyState(key_name, "P")
     {
-        Switch key_name
-        {
-            Case "LButton": DllCall("mouse_event", "UInt", 0x04) ;左键弹起
-            Case "RButton": DllCall("mouse_event", "UInt", 0x10) ;右键弹起
-            Default: DllCall("keybd_event", "Int", VirtualKey, "Int", ScanCode, "Int", 2, "Int", 0)
-        }
+        If InStr(key_name, "Button")
+            mouse_up(key_name)
+        Else
+            key_up(key_name)
     }
-    Suspend, Off
     HyperSleep(sleep_time)
 }
 ;==================================================================================
