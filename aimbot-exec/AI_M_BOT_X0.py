@@ -511,7 +511,7 @@ def close():
 
 # 检测是否存在配置与权重文件
 def check_file(file):
-    file_name = file + '.oonx'
+    file_name = file + '.onnx'
     if not os.path.isfile(file_name):
         print(f'请下载{file_name}相关文件!!!')
         sleep(3)
@@ -741,6 +741,9 @@ if __name__ == '__main__':
     test_win = [False]
     move_record_x = []
     move_record_y = []
+
+    # 如果文件不存在则退出
+    check_file('yolox_nano')
 
     # 分享数据以及展示新进程
     arr = Array('i', range(21))
