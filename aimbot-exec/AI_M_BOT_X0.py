@@ -1,8 +1,8 @@
 '''
-Detection code modified from project AIMBOT-YOLO
-Detection code Author: monokim
-Detection project website: https://github.com/monokim/AIMBOT-YOLO
-Detection project video: https://www.youtube.com/watch?v=vQlb0tK1DH0
+New Detection method(onnxruntime) modified from Project YOLOX
+YOLOX Project Authors: Zheng Ge, Songtao Liu, Feng Wang, Zeming Li, Jian Sun
+YOLOX Project website: https://github.com/Megvii-BaseDetection/YOLOX
+New Detection method(onnxruntime) cooperator: Barry
 Screenshot method from: https://www.youtube.com/watch?v=WymCpVUPWQ4
 Screenshot method code modified from project: opencv_tutorials
 Screenshot method code Author: Ben Johnson (learncodebygaming)
