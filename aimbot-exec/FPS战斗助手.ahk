@@ -298,9 +298,48 @@ HyperSleep(value)
     }
 }
 ;==================================================================================
-;鼠标左右键按下
-mouse_down(key_name := "LButton")
+;鼠标左右键按下(SendInput方式)
+mouse_sendinput_down(key_name := "LButton")
 {
+    If !Instr(key_name, "Button")
+        Return False
+    StructSize := A_PtrSize + 4*4 + A_PtrSize*2
+    WhichDown := Instr(key_name, "L") ? 0x0002 : 0x0008
+    ;MOUSEEVENTF_LEFTDOWN := 0x0002, MOUSEEVENTF_RIGHTDOWN := 0x0008
+    VarSetCapacity(Key_Down, StructSize)
+    NumPut(0, Key_Down, "UInt") ;4 bit
+    NumPut(0, Key_Down, A_PtrSize, "UInt")
+    NumPut(0, Key_Down, A_PtrSize + 4, "UInt")
+    NumPut(WhichDown, Key_Down, A_PtrSize + 4*3, "UInt")
+    DllCall("SendInput", "UInt", 1, "Ptr", &Key_Down, "Int", StructSize)
+    VarSetCapacity(Key_Down, 0) ;释放内存
+}
+;==================================================================================
+;鼠标左右键抬起(SendInput方式)
+mouse_sendinput_up(key_name := "LButton")
+{
+    If !Instr(key_name, "Button")
+        Return False
+    StructSize := A_PtrSize + 4*4 + A_PtrSize*2
+    WhichDown := Instr(key_name, "L") ? 0x0004 : 0x0010
+    ;MOUSEEVENTF_LEFTUP := 0x0004, MOUSEEVENTF_RIGHTUP := 0x0010
+    VarSetCapacity(Key_Up, StructSize)
+    NumPut(0, Key_Up, "UInt") ;4 bit
+    NumPut(0, Key_Up, A_PtrSize, "UInt")
+    NumPut(0, Key_Up, A_PtrSize + 4, "UInt")
+    NumPut(WhichDown, Key_Up, A_PtrSize + 4*3, "UInt")
+    DllCall("SendInput", "UInt", 1, "Ptr", &Key_Up, "Int", StructSize)
+    VarSetCapacity(Key_Up, 0) ;释放内存
+}
+;==================================================================================
+;鼠标左右键按下
+mouse_down(key_name := "LButton", sendinput_method := True)
+{
+    If sendinput_method
+    {
+        mouse_sendinput_down(key_name)
+        Return
+    }
     If !Instr(key_name, "Button")
         Return False
     Switch key_name
@@ -311,8 +350,13 @@ mouse_down(key_name := "LButton")
 }
 ;==================================================================================
 ;鼠标左右键抬起
-mouse_up(key_name := "LButton")
+mouse_up(key_name := "LButton", sendinput_method := True)
 {
+    If sendinput_method
+    {
+        mouse_sendinput_up(key_name)
+        Return
+    }
     If !Instr(key_name, "Button")
         Return False
     Switch key_name
@@ -322,9 +366,50 @@ mouse_up(key_name := "LButton")
     }
 }
 ;==================================================================================
-;键位按下
-key_down(key_name)
+;键位按下(SendInput方式)
+key_sendinput_down(key_name)
 {
+    static INPUT_KEYBOARD := 1, KEYEVENTF_KEYUP := 2, KEYEVENTF_SCANCODE := 8, InputSize := 16 + A_PtrSize*3
+    Input_Index := (StrLen(key_name) == 1 && Ord(key_name) > 64 && Ord(key_name) < 91) ? 2 : 1
+    VarSetCapacity(INPUTS, InputSize*Input_Index, 0)
+    addr := &INPUTS, Scancode := GetKeySC(key_name)
+    If Input_Index = 2
+        addr := NumPut(0 | KEYEVENTF_SCANCODE | 0
+                , NumPut(0x2A & 0xFF
+                , NumPut(INPUT_KEYBOARD, addr + 0) + 2, "UShort"), "UInt" ) + 8 + A_PtrSize*2
+    addr := NumPut(0 | KEYEVENTF_SCANCODE | 0
+            , NumPut(Scancode & 0xFF
+            , NumPut(INPUT_KEYBOARD, addr + 0) + 2, "UShort"), "UInt" ) + 8 + A_PtrSize*2
+    DllCall("SendInput", "UInt", Input_Index, "Ptr", &INPUTS, "Int", InputSize)
+    VarSetCapacity(INPUTS, 0) ;释放内存
+}
+;==================================================================================
+;键位弹起(SendInput方式)
+key_sendinput_up(key_name)
+{
+    static INPUT_KEYBOARD := 1, KEYEVENTF_KEYUP := 2, KEYEVENTF_SCANCODE := 8, InputSize := 16 + A_PtrSize*3
+    Input_Index := (StrLen(key_name) == 1 && Ord(key_name) > 64 && Ord(key_name) < 91) ? 2 : 1
+    VarSetCapacity(INPUTS, InputSize*Input_Index, 0)
+    addr := &INPUTS, Scancode := GetKeySC(key_name)
+    If Input_Index = 2
+        addr := NumPut(2 | KEYEVENTF_SCANCODE | 0
+                , NumPut(0x2A & 0xFF
+                , NumPut(INPUT_KEYBOARD, addr + 0) + 2, "UShort"), "UInt" ) + 8 + A_PtrSize*2
+    addr := NumPut(2 | KEYEVENTF_SCANCODE | 0
+            , NumPut(Scancode & 0xFF
+            , NumPut(INPUT_KEYBOARD, addr + 0) + 2, "UShort"), "UInt" ) + 8 + A_PtrSize*2
+    DllCall("SendInput", "UInt", Input_Index, "Ptr", &INPUTS, "Int", InputSize)
+    VarSetCapacity(INPUTS, 0) ;释放内存
+}
+;==================================================================================
+;键位按下
+key_down(key_name, sendinput_method := True)
+{
+    If sendinput_method
+    {
+        key_sendinput_down(key_name)
+        Return
+    }
     If StrLen(key_name) == 1
     {
         If (Ord(key_name) > 64 && Ord(key_name) < 91)
@@ -336,8 +421,13 @@ key_down(key_name)
 }
 ;==================================================================================
 ;键位弹起
-key_up(key_name)
+key_up(key_name, sendinput_method := True)
 {
+    If sendinput_method
+    {
+        key_sendinput_up(key_name)
+        Return
+    }
     If StrLen(key_name) == 1
     {
         If (Ord(key_name) > 64 && Ord(key_name) < 91)
@@ -349,7 +439,7 @@ key_up(key_name)
 }
 ;==================================================================================
 ;按键函数,鉴于Input模式下单纯的send速度不合要求而开发
-press_key(key_name, press_time, sleep_time)
+press_key(key_name, press_time, sleep_time, sendinput_method := True)
 {
     ;本机鼠标延迟测试,包括按下弹起
     If InStr(key_name, "Button")
@@ -360,18 +450,18 @@ press_key(key_name, press_time, sleep_time)
     If !GetKeyState(key_name)
     {
         If InStr(key_name, "Button")
-            mouse_down(key_name)
+            sendinput_method ? mouse_sendinput_down(key_name) : mouse_down(key_name)
         Else
-            key_down(key_name)
+            sendinput_method ? key_sendinput_down(key_name) : key_down(key_name)
     }
     HyperSleep(press_time)
 
     If !GetKeyState(key_name, "P")
     {
         If InStr(key_name, "Button")
-            mouse_up(key_name)
+            sendinput_method ? mouse_sendinput_up(key_name) : mouse_up(key_name)
         Else
-            key_up(key_name)
+            sendinput_method ? key_sendinput_up(key_name) : key_up(key_name)
     }
     HyperSleep(sleep_time)
 }
