@@ -113,9 +113,12 @@ class WindowCapture:
     sct = ''
 
     # 构造函数
-    def __init__(self, window_class):
+    def __init__(self, window_class, window_hwnd):
         self.windows_class = window_class
-        self.hwnd = win32gui.FindWindow(window_class, None)
+        try:
+            self.hwnd = win32gui.FindWindow(window_class, None)
+        except pywintypes.error:
+            self.hwnd = window_hwnd
         if not self.hwnd:
             raise Exception(f'\033[1;31;40m窗口类名未找到: {window_class}')
         self.update_window_info()
@@ -170,17 +173,20 @@ class FrameDetection:
     input_shape = tuple(map(int, ['224', '192']))  # 输入尺寸
     mean = (0.485, 0.456, 0.406)
     std = (0.229, 0.224, 0.225)
-    EP_list = ['CUDAExecutionProvider', 'CPUExecutionProvider']  # CUDA执行提供程序优先于CPU执行提供程序
+    EP_list = ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']  # Tensorrt优先于CUDA优先于CPU执行提供程序
     session = ''
+    io_binding = ''
+    device_name = ''
 
     # 构造函数
     def __init__(self, hwnd_value, gpu_level):
         self.win_class_name = win32gui.GetClassName(hwnd_value)
         self.std_confidence = {
-            'Valve001': 0.40,
+            'Valve001': 0.45,
             'CrossFire': 0.45,
         }.get(self.win_class_name, 0.5)
-        self.session = onnxruntime.InferenceSession('yolox_nano.onnx', providers=self.EP_list)  # 推理构造
+        self.session = onnxruntime.InferenceSession('yolox_nano.onnx', None)  # 推理构造
+        self.io_binding = self.session.io_binding()
 
         try:
             with open('classes.txt', 'r') as f:
@@ -191,7 +197,8 @@ class FrameDetection:
             self.COLORS.append(tuple(np.random.randint(256, size=3).tolist()))
 
         # 检测是否在GPU上运行图像识别
-        if onnxruntime.get_device() == 'GPU':
+        self.device_name = onnxruntime.get_device()
+        if self.device_name == 'GPU':
             gpu_eval = check_gpu(gpu_level)
             gpu_message = {
                 2: '小伙电脑顶呱呱啊',
@@ -230,10 +237,17 @@ class FrameDetection:
         img, ratio = preprocess(frames, self.input_shape, self.mean, self.std)
 
         # 检测
-        ort_inputs = {self.session.get_inputs()[0].name: img[None, :, :, :]}
-        output = self.session.run(None, ort_inputs)
-        predictions = demo_postprocess(output[0], self.input_shape)[0]
+        if self.device_name == 'GPU':
+            ortvalue = onnxruntime.OrtValue.ortvalue_from_numpy(img[None, :, :, :], 'cuda', 0)
+            self.io_binding.bind_input(name=self.session.get_inputs()[0].name, device_type=ortvalue.device_name(), device_id=0, element_type=np.float32, shape=ortvalue.shape(), buffer_ptr=ortvalue.data_ptr())
+            self.io_binding.bind_output('output')
+            self.session.run_with_iobinding(self.io_binding)
+            output = self.io_binding.copy_outputs_to_cpu()[0]
+        else:
+            ort_inputs = {self.session.get_inputs()[0].name: img[None, :, :, :]}
+            output = self.session.run(None, ort_inputs)[0]
 
+        predictions = demo_postprocess(output, self.input_shape)[0]
         boxes_xyxy, scores = analyze(predictions, ratio)
         dets = multiclass_nms(boxes_xyxy, scores, self.nms_thd, self.std_confidence)
 
@@ -275,6 +289,10 @@ class FrameDetection:
                 y0 = y_tht + (h_tht - frame_height) / 2
                 fire_range = min(w_tht, h_tht) / 2
                 fire_pos = 0
+
+            xpos = x0 + frame_width / 2
+            ypos = y0 + frame_height / 2
+            cv2.line(frames, (frame_width // 2, frame_height // 2), (int(xpos), int(ypos)), (0, 0, 255), 2)
 
             # 查看是否已经指向目标
             if 1/4 * w_tht > abs(frame_width / 2 - x_tht - w_tht / 2) and 2/5 * h_tht > abs(frame_height / 2 - y_tht - h_tht / 2):
@@ -502,7 +520,7 @@ def clear():
 def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move_ry):
     recoil_control = 0
     move_range = sqrt(pow(a, 2) + pow(b, 2))
-    DPI_Var = windll.user32.GetDpiForWindow(window_hwnd) / 96
+    DPI_Var = windll.user32.GetDpiForWindow(window_hwnd_name) / 96
     enhanced_holdback = win32gui.SystemParametersInfo(SPI_GETMOUSE)
     if enhanced_holdback[1]:
         win32gui.SystemParametersInfo(SPI_SETMOUSE, [0, 0, 0], 0)
@@ -511,22 +529,22 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
     if fps_var and arr[17] and arr[11]:
-        if move_range > 5 * ranges:
+        if move_range > 8 * ranges:
             b = uniform(0.7 * b, 1.3 * b)
         a /= DPI_Var
         b /= DPI_Var
         fps_factor = pow(fps_var/5, 1/3)
-        (x0, recoil_control) = {
-            'CrossFire': (a / 2.36 * (client_ratio / (4/3)) / fps_factor, 2), # 32
-            'Valve001': (a * 1.92 / fps_factor, 2),  # 2.5 + mouse acceleration
-            'LaunchCombatUWindowsClient': (a * 1.52 / fps_factor, 2),  # 10.0
-            'LaunchUnrealUWindowsClient': (a / 2.22 / fps_factor, 5), # 20
-        }.get(win_class, (a / fps_factor, 2))
+        x0 = {
+            'CrossFire': a / 2.36 * (client_ratio / (4/3)) / fps_factor,  # 32
+            'Valve001': a * 1.92 / fps_factor,  # 2.5 + mouse acceleration
+            'LaunchCombatUWindowsClient': a * 1.52 / fps_factor,  # 10.0
+            'LaunchUnrealUWindowsClient': a / 2.22 / fps_factor,  # 20
+        }.get(win_class, a / fps_factor)
         (y0, recoil_control) = {
-            'CrossFire': (b / 2.36 * (client_ratio / (4/3)) / fps_factor, 2),  # 32
-            'Valve001': (b * 1.92 / fps_factor, 2),  # 2.5 + mouse acceleration
-            'LaunchCombatUWindowsClient': (b * 1.52 / fps_factor, 2), # 10.0
-            'LaunchUnrealUWindowsClient': (b / 2.22 / fps_factor, 5), # 20
+            'CrossFire': (b / 2.36 * (client_ratio / (4/3)) / fps_factor, 4),  # 32
+            'Valve001': (b * 1.92 / fps_factor, 4),  # 2.5 + mouse acceleration
+            'LaunchCombatUWindowsClient': (b * 1.52 / fps_factor, 4),  # 10.0
+            'LaunchUnrealUWindowsClient': (b / 2.22 / fps_factor, 10),  # 20
         }.get(win_class, (b / fps_factor, 2))
 
         move_rx, x0 = track_opt(move_rx, a, x0)
@@ -541,7 +559,7 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
                 if not GetAsyncKeyState(VK_LBUTTON):
                     sp_mouse_down()
                     press_time[0] = int(time() * 1000)
-                if arr[12] == 1 or arr[14]:  # 简易压枪
+                elif arr[12] == 1 or arr[14]:  # 简易压枪
                     sp_mouse_xy(0, recoil_control)
 
         if GetAsyncKeyState(VK_LBUTTON):
@@ -733,6 +751,7 @@ if __name__ == '__main__':
     15 所持武器
     16 指向身体
     17 自瞄自火
+    18 压枪测试
     '''
 
     show_proc = Process(target=show_frames, args=(frame_output, arr,))
@@ -752,25 +771,26 @@ if __name__ == '__main__':
     arr[15] = 0  # 所持武器(0无1主2副)
     arr[16] = 0  # 指向身体
     arr[17] = 1  # 自瞄/自火
+    arr[18] = 0  # 压枪测试
     detect1_proc = Process(target=detection1, args=(queue, arr, frame_input,))
     if not MP_setting:
         detect2_proc = Process(target=detection2, args=(queue, arr,))
 
     # 寻找读取游戏窗口类型并确认截取位置
-    window_class_name, window_hwnd, test_win[0] = get_window_info()
-    arr[0] = window_hwnd
+    window_class_name, window_hwnd_name, test_win[0] = get_window_info()
+    arr[0] = window_hwnd_name
 
     # 等待游戏画面完整出现(拥有大于0的长宽)
     window_ready = 0
     while not window_ready:
         sleep(1)
-        win_client_rect = win32gui.GetClientRect(window_hwnd)
+        win_client_rect = win32gui.GetClientRect(window_hwnd_name)
         if win_client_rect[2] - win_client_rect[0] > 0 and win_client_rect[3] - win_client_rect[1] > 0:
             window_ready = 1
     client_ratio = (win_client_rect[2] - win_client_rect[0]) / (win_client_rect[3] - win_client_rect[1])
 
     # 初始化截图类
-    win_cap = WindowCapture(window_class_name)
+    win_cap = WindowCapture(window_class_name, window_hwnd_name)
 
     # 开始分析进程
     detect1_proc.start()
@@ -803,7 +823,7 @@ if __name__ == '__main__':
         if exit_program:
             break
 
-        if win32gui.GetForegroundWindow() == window_hwnd and not test_win[0]:
+        if win32gui.GetForegroundWindow() == window_hwnd_name and not test_win[0]:
             if arr[4]:
                 if arr[15] == 1:
                     arr[13] = (944 if arr[14] or arr[12] != 1 else 1694)

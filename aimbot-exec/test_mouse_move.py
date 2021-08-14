@@ -1,13 +1,75 @@
 from win32con import SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
+from ctypes import windll, c_long, c_ulong, Structure, Union, c_int, POINTER, sizeof
 from sys import exit, executable
 from keyboard import is_pressed
 from time import sleep, time
 from mss import mss, tools
-from ctypes import windll
-import pydirectinput
 import pywintypes
 import win32gui
 import os
+
+
+# ↓↓↓↓↓↓↓↓↓ 简易鼠标行为模拟,使用SendInput函数 ↓↓↓↓↓↓↓↓↓
+LONG = c_long
+DWORD = c_ulong
+ULONG_PTR = POINTER(DWORD)
+
+
+class MOUSEINPUT(Structure):
+    _fields_ = (('dx', LONG),
+                ('dy', LONG),
+                ('mouseData', DWORD),
+                ('dwFlags', DWORD),
+                ('time', DWORD),
+                ('dwExtraInfo', ULONG_PTR))
+
+
+class _INPUTunion(Union):
+    _fields_ = (('mi', MOUSEINPUT), ('mi', MOUSEINPUT))
+
+
+class INPUT(Structure):
+    _fields_ = (('type', DWORD),
+                ('union', _INPUTunion))
+
+
+def SendInput(*inputs):
+    nInputs = len(inputs)
+    LPINPUT = INPUT * nInputs
+    pInputs = LPINPUT(*inputs)
+    cbSize = c_int(sizeof(INPUT))
+    return windll.user32.SendInput(nInputs, pInputs, cbSize)
+
+
+def Input(structure):
+    return INPUT(0, _INPUTunion(mi=structure))
+
+
+def MouseInput(flags, x, y, data):
+    return MOUSEINPUT(x, y, data, flags, 0, None)
+
+
+def Mouse(flags, x=0, y=0, data=0):
+    return Input(MouseInput(flags, x, y, data))
+
+
+def sp_mouse_xy(x, y):
+    return SendInput(Mouse(0x0001, x, y))
+
+
+def sp_mouse_down(key = 'LButton'):
+    if key == 'LButton':
+        return SendInput(Mouse(0x0002))
+    elif key == 'RButton':
+        return SendInput(Mouse(0x0008))
+
+
+def sp_mouse_up(key = 'LButton'):
+    if key == 'LButton':
+        return SendInput(Mouse(0x0004))
+    elif key == 'RButton':
+        return SendInput(Mouse(0x0010))
+# ↑↑↑↑↑↑↑↑↑ 简易鼠标行为模拟,使用SendInput函数 ↑↑↑↑↑↑↑↑↑
 
 
 def restart():
@@ -32,15 +94,17 @@ def mouse_move_lr(num):
     if mouse_speed != 10:
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
-    pydirectinput.leftClick()
+    sp_mouse_down()
+    sp_mouse_up()
     sleep(0.3)
     for i in range(10):
-        pydirectinput.moveRel(int(num/DPI_Var), 0, relative=True)
+        sp_mouse_xy(int(num/DPI_Var), 0)
         print(str('{:02.0f}'.format(i+1)), end='\r')
         sleep(0.3)
-    pydirectinput.leftClick()
+    sp_mouse_down()
+    sp_mouse_up()
     sleep(0.3)
-    pydirectinput.moveRel(-int(num*5/DPI_Var), 0, relative=True)
+    sp_mouse_xy(-int(num*5/DPI_Var), 0)
     sleep(0.3)
 
     if enhanced_holdback[1]:
