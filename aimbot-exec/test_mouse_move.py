@@ -69,6 +69,11 @@ def sp_mouse_up(key = 'LButton'):
         return SendInput(Mouse(0x0004))
     elif key == 'RButton':
         return SendInput(Mouse(0x0010))
+
+
+def sp_mouse_click(key = 'LButton'):
+    sp_mouse_down(key)
+    sp_mouse_up(key)
 # ↑↑↑↑↑↑↑↑↑ 简易鼠标行为模拟,使用SendInput函数 ↑↑↑↑↑↑↑↑↑
 
 
@@ -94,17 +99,13 @@ def mouse_move_lr(num):
     if mouse_speed != 10:
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
-    sp_mouse_down()
-    sp_mouse_up()
+    sp_mouse_click()
     sleep(0.3)
-    for i in range(10):
-        sp_mouse_xy(int(num/DPI_Var), 0)
-        print(str('{:02.0f}'.format(i+1)), end='\r')
-        sleep(0.3)
-    sp_mouse_down()
-    sp_mouse_up()
+    sp_mouse_xy(int(num/DPI_Var), 0)
     sleep(0.3)
-    sp_mouse_xy(-int(num*5/DPI_Var), 0)
+    sp_mouse_click()
+    sleep(0.3)
+    sp_mouse_xy(-int(num/2/DPI_Var), 0)
     sleep(0.3)
 
     if enhanced_holdback[1]:
@@ -139,10 +140,10 @@ with mss() as sct:
     moved = 0
     while True:
         if is_pressed('left'):
-            mouse_move_lr(-10)
+            mouse_move_lr(-200)
             moved = 1
         elif is_pressed('right'):
-            mouse_move_lr(10)
+            mouse_move_lr(200)
             moved = 1
         if moved:
             sct_img = sct.grab(monitor)
