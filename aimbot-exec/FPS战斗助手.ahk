@@ -26,7 +26,7 @@ CheckPosition1(BX, BY, BW, BH, win_class)
 BM := 1
 if instr(win_title, "穿越火线")
     BM := 4/3
-boxh := BH / 9 * 4 // 160 * 160
+boxh := Round(BH / 9 * 4)
 boxw := Round(boxh * 1.6 * BM)
 showx := BX + (BW - boxw) // 2 - 1
 showy := BY + (BH - boxh) // 2 - 1
