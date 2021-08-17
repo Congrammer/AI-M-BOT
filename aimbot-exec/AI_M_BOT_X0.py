@@ -169,7 +169,7 @@ class FrameDetection:
     input_shape = tuple(map(int, ['224', '192']))  # 输入尺寸
     mean = (0.485, 0.456, 0.406)
     std = (0.229, 0.224, 0.225)
-    EP_list = ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider']  # Tensorrt优先于CUDA优先于CPU执行提供程序
+    EP_list = onnxruntime.get_available_providers()  # ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'] Tensorrt优先于CUDA优先于CPU执行提供程序
     session = ''
     io_binding = ''
     device_name = ''
@@ -181,7 +181,10 @@ class FrameDetection:
             'Valve001': 0.45,
             'CrossFire': 0.45,
         }.get(self.win_class_name, 0.5)
-        self.session = onnxruntime.InferenceSession('yolox_nano.onnx', None)  # 推理构造
+        try:
+            self.session = onnxruntime.InferenceSession('yolox_nano.onnx', providers=self.EP_list)  # 推理构造
+        except RuntimeError:
+            self.session.set_providers(self.EP_list[len(self.EP_list)-1])
         self.io_binding = self.session.io_binding()
 
         try:
