@@ -5,4 +5,4 @@ test: ../test.txt  # test images
 
 # Classes
 nc: 3  # number of classes
-names: [ 'human-head', 'human-body', 'human-dead' ]  # class names
+names: [ 'human-head', 'human-body' ]  # class names
