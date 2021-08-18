@@ -324,11 +324,7 @@ def preprocess(image, input_size, mean, std, swap=(2, 0, 1)):
         padded_img = np.ones(input_size) * 114.0
     img = image
     r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
-    resized_img = cv2.resize(
-        img,
-        (int(img.shape[1] * r), int(img.shape[0] * r)),
-        interpolation=cv2.INTER_LINEAR,
-    ).astype(np.float32)
+    resized_img = cv2.resize(img, (int(img.shape[1] * r), int(img.shape[0] * r)), interpolation=cv2.INTER_LINEAR).astype(np.float32)
     padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
 
     padded_img = padded_img[:, :, ::-1]
@@ -644,7 +640,7 @@ def show_frames(output_pipe, array):
             show_str3 = 'Fire rate is at ' + str('{:02.0f}'.format((10000 / (array[13] + 306)))) + ' RPS'
             show_str4 = 'Please enjoy coding ^_^' if array[17] else 'Please enjoy coding @_@'
             if show_img.any():
-                show_img = cv2.resize(show_img, (array[5], int(array[5] * 6 / 7)))
+                show_img = cv2.resize(show_img, (array[5], int(array[5] * 6 / 7)), interpolation=cv2.INTER_AREA)
                 img_ex = cv2.resize(img_ex, (array[5], int(array[5] / 2)))
                 cv2.putText(show_img, show_str0, (int(array[5] / 25), int(array[5] * 6 / 7 / 12)), font, array[5] / 600, (127, 255, 0), 2, cv2.LINE_AA)
                 cv2.putText(img_ex, show_str1, (10, int(array[5] / 9)), font, array[5] / 450, show_color, 1, cv2.LINE_AA)
@@ -710,6 +706,7 @@ if __name__ == '__main__':
         SetPriorityClass(handle, ABOVE_NORMAL_PRIORITY_CLASS)
     else:
         os.nice(1)
+
     queue = JoinableQueue()  # 初始化队列
     frame_output, frame_input = Pipe(False)  # 初始化管道(receiving,sending)
     press_time, up_time, show_fps = [0], [0], [1]

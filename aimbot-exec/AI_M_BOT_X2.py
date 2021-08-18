@@ -569,6 +569,7 @@ if __name__ == '__main__':
         SetPriorityClass(handle, ABOVE_NORMAL_PRIORITY_CLASS)
     else:
         os.nice(1)
+
     queue = JoinableQueue()  # 初始化队列
     frame_output, frame_input = Pipe(False)  # 初始化管道(receiving,sending)
     press_time, up_time, show_fps = [0], [0], [1]
