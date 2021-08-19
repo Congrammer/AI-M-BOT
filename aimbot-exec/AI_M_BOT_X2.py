@@ -390,13 +390,13 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
         fps_factor = pow(fps_var/3, 1/3)
         x0 = {
             'CrossFire': a / 2.719 * (client_ratio / (4/3)) / fps_factor,  # 32
-            'Valve001': a * 1.667 / fps_factor,  # 2.5 + mouse acceleration
+            'Valve001': a * 1.667 / fps_factor,  # 2.5
             'LaunchCombatUWindowsClient': a * 1.319 / fps_factor,  # 10.0
             'LaunchUnrealUWindowsClient': a / 2.557 / fps_factor,  # 20
         }.get(win_class, a / fps_factor)
         (y0, recoil_control) = {
             'CrossFire': (b / 2.719 * (client_ratio / (4/3)) / fps_factor, 4),  # 32
-            'Valve001': (b * 1.667 / fps_factor, 4),  # 2.5 + mouse acceleration
+            'Valve001': (b * 1.667 / fps_factor, 4),  # 2.5
             'LaunchCombatUWindowsClient': (b * 1.319 / fps_factor, 4),  # 10.0
             'LaunchUnrealUWindowsClient': (b / 2.557 / fps_factor, 10),  # 20
         }.get(win_class, (b / fps_factor, 2))
