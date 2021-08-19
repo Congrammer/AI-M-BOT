@@ -1,80 +1,13 @@
-from win32con import SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
-from ctypes import windll, c_long, c_ulong, Structure, Union, c_int, POINTER, sizeof
+from win32con import SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED, MOUSEEVENTF_MOVE, MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP
+from win32api import mouse_event
 from sys import exit, executable
 from keyboard import is_pressed
 from time import sleep, time
 from mss import mss, tools
+from ctypes import windll
 import pywintypes
 import win32gui
 import os
-
-
-# ↓↓↓↓↓↓↓↓↓ 简易鼠标行为模拟,使用SendInput函数 ↓↓↓↓↓↓↓↓↓
-LONG = c_long
-DWORD = c_ulong
-ULONG_PTR = POINTER(DWORD)
-
-
-class MOUSEINPUT(Structure):
-    _fields_ = (('dx', LONG),
-                ('dy', LONG),
-                ('mouseData', DWORD),
-                ('dwFlags', DWORD),
-                ('time', DWORD),
-                ('dwExtraInfo', ULONG_PTR))
-
-
-class _INPUTunion(Union):
-    _fields_ = (('mi', MOUSEINPUT), ('mi', MOUSEINPUT))
-
-
-class INPUT(Structure):
-    _fields_ = (('type', DWORD),
-                ('union', _INPUTunion))
-
-
-def SendInput(*inputs):
-    nInputs = len(inputs)
-    LPINPUT = INPUT * nInputs
-    pInputs = LPINPUT(*inputs)
-    cbSize = c_int(sizeof(INPUT))
-    return windll.user32.SendInput(nInputs, pInputs, cbSize)
-
-
-def Input(structure):
-    return INPUT(0, _INPUTunion(mi=structure))
-
-
-def MouseInput(flags, x, y, data):
-    return MOUSEINPUT(x, y, data, flags, 0, None)
-
-
-def Mouse(flags, x=0, y=0, data=0):
-    return Input(MouseInput(flags, x, y, data))
-
-
-def sp_mouse_xy(x, y):
-    return SendInput(Mouse(0x0001, x, y))
-
-
-def sp_mouse_down(key = 'LButton'):
-    if key == 'LButton':
-        return SendInput(Mouse(0x0002))
-    elif key == 'RButton':
-        return SendInput(Mouse(0x0008))
-
-
-def sp_mouse_up(key = 'LButton'):
-    if key == 'LButton':
-        return SendInput(Mouse(0x0004))
-    elif key == 'RButton':
-        return SendInput(Mouse(0x0010))
-
-
-def sp_mouse_click(key = 'LButton'):
-    sp_mouse_down(key)
-    sp_mouse_up(key)
-# ↑↑↑↑↑↑↑↑↑ 简易鼠标行为模拟,使用SendInput函数 ↑↑↑↑↑↑↑↑↑
 
 
 def restart():
@@ -99,13 +32,15 @@ def mouse_move_lr(num):
     if mouse_speed != 10:
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
-    sp_mouse_click()
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
     sleep(0.3)
-    sp_mouse_xy(int(num/DPI_Var), 0)
+    mouse_event(MOUSEEVENTF_MOVE, int(num/DPI_Var), 0, 0, 0)
     sleep(0.3)
-    sp_mouse_click()
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
     sleep(0.3)
-    sp_mouse_xy(-int(num/2/DPI_Var), 0)
+    mouse_event(MOUSEEVENTF_MOVE, -int(num/2/DPI_Var), 0, 0, 0)
     sleep(0.3)
 
     if enhanced_holdback[1]:
@@ -139,11 +74,12 @@ with mss() as sct:
     print('Get start!!! ' + class_name)
     moved = 0
     while True:
+        sleep(0.1)
         if is_pressed('left'):
-            mouse_move_lr(-200)
+            mouse_move_lr(-50)
             moved = 1
         elif is_pressed('right'):
-            mouse_move_lr(200)
+            mouse_move_lr(50)
             moved = 1
         if moved:
             sct_img = sct.grab(monitor)

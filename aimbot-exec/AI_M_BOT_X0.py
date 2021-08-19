@@ -14,8 +14,8 @@ from win32api import GetAsyncKeyState, GetKeyState, GetCurrentProcessId, OpenPro
 from ctypes import windll, c_long, c_ulong, Structure, Union, c_int, POINTER, sizeof
 from multiprocessing import Process, Array, Pipe, freeze_support, JoinableQueue
 from win32process import SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS
+from math import sqrt, pow, ceil, atan, cos, pi
 from sys import exit, executable, platform
-from math import sqrt, pow, ceil
 from collections import deque
 from statistics import median
 from time import sleep, time
@@ -149,6 +149,9 @@ class WindowCapture:
 
     def get_window_left(self):
         return win32gui.GetWindowRect(self.hwnd)[0]
+
+    def get_side_len(self):
+        return int(self.total_h / (2/3))
 
     def get_region(self):
         self.update_window_info()
@@ -522,11 +525,11 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
     if fps_var and arr[17] and arr[11]:
+        a = cos((pi - atan(a/arr[18])) / 2) * (2*arr[18]) / DPI_Var
+        b = cos((pi - atan(b/arr[18])) / 2) * (2*arr[18]) / DPI_Var
         if move_range > 6 * ranges:
-            a = uniform(0.9 * a, 1.1 * a)
-            b = uniform(0.9 * b, 1.1 * b)
-        a /= DPI_Var
-        b /= DPI_Var
+            a *= uniform(0.9, 1.1)
+            b *= uniform(0.9, 1.1)
         fps_factor = pow(fps_var/3, 1/3)
         x0 = {
             'CrossFire': a / 2.719 * (client_ratio / (4/3)) / fps_factor,  # 32
@@ -741,6 +744,7 @@ if __name__ == '__main__':
     15 所持武器
     16 指向身体
     17 自瞄自火
+    18 基础边长
     '''
 
     show_proc = Process(target=show_frames, args=(frame_output, arr,))
@@ -760,6 +764,7 @@ if __name__ == '__main__':
     arr[15] = 0  # 所持武器(0无1主2副)
     arr[16] = 0  # 指向身体
     arr[17] = 1  # 自瞄/自火
+    arr[18] = 0  # 基础边长
     detect_proc = Process(target=detection, args=(queue, arr, frame_input,))
 
     # 寻找读取游戏窗口类型并确认截取位置
@@ -777,6 +782,9 @@ if __name__ == '__main__':
 
     # 初始化截图类
     win_cap = WindowCapture(window_class_name, window_hwnd_name)
+
+    # 计算基础边长
+    arr[18] = win_cap.get_side_len()
 
     # 开始分析进程
     detect_proc.start()
