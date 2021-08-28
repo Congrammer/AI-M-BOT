@@ -265,7 +265,7 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
                 if not (GetAsyncKeyState(VK_LBUTTON) < 0 or GetKeyState(VK_LBUTTON) < 0):
                     mouse_down()
                     press_time[0] = int(time() * 1000)
-                    if (time() * 1000 - up_time[0]) <= 175:
+                    if (time() * 1000 - up_time[0]) <= 219.4:
                         shoot_times[0] += 1
                         if shoot_times[0] > 12:
                             shoot_times[0] = 12
@@ -275,7 +275,7 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
                 mouse_up()
                 up_time[0] = int(time() * 1000)
 
-    if (time() * 1000 - up_time[0]) > 175:
+    if (time() * 1000 - up_time[0]) > 219.4:
         shoot_times[0] = 0
 
     if enhanced_holdback[1]:
