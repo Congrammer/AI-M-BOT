@@ -29,6 +29,7 @@ class WindowCapture:  # 截图类
             self.hwnd = win32gui.FindWindow(window_class, None)
         except pywintypes.error as e:
             print('找窗口错误\n' + str(e))
+            self.hwnd = window_hwnd
         if not self.hwnd:
             raise Exception(f'窗口类名未找到: {window_class}')
         self.update_window_info()

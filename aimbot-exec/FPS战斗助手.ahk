@@ -24,8 +24,8 @@ IsJumping := False
 w_pressed := s_pressed := a_pressed := d_pressed := 0
 CheckPosition1(BX, BY, BW, BH, win_class)
 BM := 1
-if instr(win_title, "穿越火线")
-    BM := 4/3
+if instr(win_class, "CrossFire")
+    BM := (BW/BH) / (4/3)
 boxh := Round(BH / 9 * 4)
 boxw := Round(boxh * 1.6 * BM)
 showx := BX + (BW - boxw) // 2 - 1

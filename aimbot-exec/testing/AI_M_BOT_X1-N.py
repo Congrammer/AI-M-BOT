@@ -221,8 +221,6 @@ def check_file(file):
 
 # 移动鼠标(并射击)
 def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move_ry):
-    recoil_control = 0
-    move_range = sqrt(pow(a, 2) + pow(b, 2))
     DPI_Var = windll.user32.GetDpiForWindow(window_hwnd_name) / 96
     move_rx, a = track_opt(move_rx, a, DPI_Var)
     move_ry, b = track_opt(move_ry, b, DPI_Var)
@@ -234,6 +232,8 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
     if fps_var and arr[17] and arr[11]:
+        recoilless_try = recoil_control[0] * shoot_times[0] if arr[12] == 1 or arr[14] else 0
+        move_range = sqrt(pow(a, 2) + pow(b - recoilless_try, 2))
         a = cos((pi - atan(a/arr[18])) / 2) * (2*arr[18]) / DPI_Var
         b = cos((pi - atan(b/arr[18])) / 2) * (2*arr[18]) / DPI_Var
         if move_range > 6 * ranges:
@@ -246,12 +246,13 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
             'LaunchCombatUWindowsClient': a * 1.319 / fps_factor,  # 10.0
             'LaunchUnrealUWindowsClient': a / 2.557 / fps_factor,  # 20
         }.get(win_class, a / fps_factor)
-        (y0, recoil_control) = {
-            'CrossFire': (b / 2.719 * (client_ratio / (4/3)) / fps_factor, 2),  # 32
-            'Valve001': (b * 1.667 / fps_factor, 2),  # 2.5
-            'LaunchCombatUWindowsClient': (b * 1.319 / fps_factor, 2),  # 10.0
-            'LaunchUnrealUWindowsClient': (b / 2.557 / fps_factor, 5),  # 20
-        }.get(win_class, (b / fps_factor, 2))
+        y0 = {
+            'CrossFire': b / 2.719 * (client_ratio / (4/3)) / fps_factor,  # 32
+            'Valve001': b * 1.667 / fps_factor,  # 2.5
+            'LaunchCombatUWindowsClient': b * 1.319 / fps_factor,  # 10.0
+            'LaunchUnrealUWindowsClient': b / 2.557 / fps_factor,  # 20
+        }.get(win_class, b / fps_factor)
+        y0 += recoilless_try  # 简易压枪
 
         if arr[12] == 1 or arr[14]:
             y0 += (recoil_control * shoot_times[0])  # 简易压枪
@@ -259,7 +260,7 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
         mouse_xy(int(round(x0)), int(round(y0)))
 
     # 不分敌友射击
-    if win_class != 'CrossFire':
+    if win_class != 'CrossFire' or arr[19]:
         if (go_fire or move_range < ranges) and arr[11]:
             if (time() * 1000 - up_time[0]) > rate:
                 if not (GetAsyncKeyState(VK_LBUTTON) < 0 or GetKeyState(VK_LBUTTON) < 0):
@@ -426,6 +427,8 @@ if __name__ == '__main__':
     move_record_x = []
     move_record_y = []
     shoot_times = [0]
+    recoil_control = [0]
+    cf_enemy_color = np.array([3487638, 3487639, 3487640, 3487641, 3422105, 3422106, 3422362, 3422363, 3422364, 3356828, 3356829, 3356830, 3356831, 3291295, 3291551, 3291552, 3291553, 3291554, 3226018, 3226019, 3226020, 3226276, 3226277, 3160741, 3160742, 3160743, 3160744, 3095208, 3095209, 3095465, 3095466, 3095467, 3029931, 3029932, 3029933, 3029934, 3030190, 2964654, 2964655, 2964656, 2964657, 2899121, 2899122, 2899123, 2899379, 2899380, 2833844, 2833845, 2833846, 2833847, 2768311, 2768567, 2768568, 2768569, 2768570, 2703034, 2703035, 2703036, 2703292, 2703292, 2703293, 2637757, 2637758, 2637759, 2637760, 2572224, 2572225, 2572481, 2572482, 2572483, 2506948, 2506949, 2506950, 2507206, 2507207, 2441671, 2441672, 2441673, 2441674, 2376138, 2376139, 2376395, 2376396, 2376397, 2310861, 2310862, 2310863, 2310864, 2311120, 2245584, 2245585, 2245586, 2245587, 2180051, 2180052, 2180308, 2180309, 2180310, 2114774, 2114775, 2114776, 2114777, 2049241, 2049497, 2049498, 2049499, 2049500, 1983964, 1983965, 1983966, 1984222, 1984223, 1918687, 1918688, 1918689, 1918690, 1853154, 1853155, 1853411, 1853412, 1853413, 1787877, 1787878, 1787879, 1787880, 1788136, 1722600, 1722601, 1722602, 1722603, 1657067, 1657068, 1657069, 1657325, 1657326, 1591790, 1591791, 1591792, 1591793, 1526514])  # CF敌方红名库
 
     # 如果文件不存在则退出
     check_file('yolov4-tiny')
@@ -452,6 +455,7 @@ if __name__ == '__main__':
     16 指向身体
     17 自瞄自火
     18 基础边长
+    19 火线红名
     '''
     arr[1] = 0  # 分析进程状态
     arr[2] = 0  # 是否全屏
@@ -469,11 +473,20 @@ if __name__ == '__main__':
     arr[16] = 0  # 指向身体
     arr[17] = 1  # 自瞄/自火
     arr[18] = 0  # 基础边长
+    arr[19] = 0  # CF下红名
     detect_proc = Process(target=detection, args=(queue, arr, frame_input,))
 
     # 寻找读取游戏窗口类型并确认截取位置
     window_class_name, window_hwnd_name, test_win[0] = get_window_info()
     arr[0] = window_hwnd_name
+
+    # 确认大致平均后坐力
+    recoil_control[0] = {
+        'CrossFire': 2,  # 32
+        'Valve001': 2,  # 2.5
+        'LaunchCombatUWindowsClient': 2,  # 10.0
+        'LaunchUnrealUWindowsClient': 5,  # 20
+    }.get(window_class_name, 2)
 
     # 如果非全屏则展示效果
     arr[2] = 1 if is_full_screen(window_hwnd_name) else 0
@@ -510,9 +523,24 @@ if __name__ == '__main__':
     ini_sct_time = 0  # 初始化计时
     small_float = np.finfo(np.float64).eps  # 初始化一个尽可能小却小得不过分的数
 
+    winw, winh = win_cap.get_window_info()
+    cutw, cuth = win_cap.get_cut_info()
+
     while True:
-        screenshot = win_cap.grab_screenshot()
-        # screenshot = win_cap.get_screenshot()
+        # screenshot = win_cap.grab_screenshot()
+        screenshot = win_cap.get_screenshot()
+        if window_class_name == 'CrossFire':
+            cut_scrn = screenshot[cuth // 2 + winh // 16 : cuth // 2 + winh // 15, cutw // 2 - winw // 40 : cutw // 2 + winw // 40]  # 从截屏中截取红名区域
+            # 将红名区域rgb转为十进制数值
+            hexcolor = []
+            for i in range(cut_scrn.shape[0]):
+                for j in range(cut_scrn.shape[1]):
+                    rgbint = cut_scrn[i][j][0]<<16 | cut_scrn[i][j][1]<<8 | cut_scrn[i][j][2]
+                    hexcolor.append(rgbint)
+            # 与内容中的敌方红名色库比较
+            hexcolor = np.array(hexcolor)
+            indices = np.intersect1d(cf_enemy_color, hexcolor)
+            arr[19] = len(indices)
 
         try:
             screenshot.any()
