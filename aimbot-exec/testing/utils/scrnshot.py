@@ -84,6 +84,9 @@ class WindowCapture:  # 截图类
         except (pywintypes.error, win32ui.error, ValueError):
             return None
 
+    def get_window_info(self):
+        return self.total_w, self.total_h
+
     def get_cut_info(self):
         return self.cut_w, self.cut_h
 
