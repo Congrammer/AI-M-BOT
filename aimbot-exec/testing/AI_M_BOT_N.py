@@ -1,4 +1,4 @@
-'''
+"""
 Detection code modified from project AIMBOT-YOLO
 Detection code Author: monokim
 Detection project website: https://github.com/monokim/AIMBOT-YOLO
@@ -10,17 +10,20 @@ Screenshot method website: https://github.com/learncodebygaming/opencv_tutorials
 Mouse event method code modified from project logitech-cve
 Mouse event method website: https://github.com/ekknod/logitech-cve
 Mouse event method project Author: ekknod
-'''
+"""
 
 from win32con import VK_LBUTTON, VK_END, PROCESS_ALL_ACCESS, SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
 from win32api import GetAsyncKeyState, GetKeyState, GetCurrentProcessId, OpenProcess
 from multiprocessing import Process, Array, Pipe, freeze_support, JoinableQueue
-from utils.util import check_gpu, set_dpi, is_full_screen, is_admin, clear
 from win32process import SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS
-from utils.mouse import mouse_xy, mouse_down, mouse_up, mouse_close
-from math import sqrt, pow, ceil, atan, cos, pi
-from sys import exit, executable, platform
-from utils.scrnshot import WindowCapture
+from util import set_dpi, is_full_screen, is_admin, clear, restart
+from mouse import mouse_xy, mouse_down, mouse_up, mouse_close
+from darknet_yolo34 import FrameDetection34
+from math import sqrt, pow, atan, cos, pi
+from torch_yolox import FrameDetectionX
+from scrnshot import WindowCapture
+from pynput.mouse import Listener
+from sys import exit, platform
 from collections import deque
 from statistics import median
 from time import sleep, time
@@ -34,135 +37,12 @@ import cv2
 import os
 
 
-# 分析类
-class FrameDetection:
-    # 类属性
-    side_width, side_height = 512, 320  # 输入尺寸
-    std_confidence = 0  # 置信度阀值
-    conf_thd = 0.4  # 置信度阀值
-    nms_thd = 0.3  # 非极大值抑制
-    win_class_name = ''  # 窗口类名
-    class_names = ''  # 检测类名
-    CONFIG_FILE = ['./']
-    WEIGHT_FILE = ['./']
-    COLORS = []
-    model, net = '', ''  # 建立模型, 建立网络
-    errors = 0  # 仅仅显示一次错误
-
-    # 构造函数
-    def __init__(self, hwnd_value):
-        self.win_class_name = win32gui.GetClassName(hwnd_value)
-        self.std_confidence = {
-            'Valve001': 0.4,
-            'CrossFire': 0.45,
-        }.get(self.win_class_name, 0.5)
-
-        load_file('yolov4-tiny', self.CONFIG_FILE, self.WEIGHT_FILE)
-        self.net = cv2.dnn.readNet(self.CONFIG_FILE[0], self.WEIGHT_FILE[0])  # 读取权重与配置文件
-        self.model = cv2.dnn_DetectionModel(self.net)
-        self.model.setInputParams(size=(self.side_width, self.side_height), scale=1/255, swapRB=False)
-        try:
-            with open('classes.txt', 'r') as f:
-                self.class_names = [cname.strip() for cname in f.readlines()]
-        except FileNotFoundError:
-            self.class_names = ['human-head', 'human-body']
-        for i in range(len(self.class_names)):
-            self.COLORS.append(tuple(np.random.randint(256, size=3).tolist()))
-
-        # 检测并设置在GPU上运行图像识别
-        if cv2.cuda.getCudaEnabledDeviceCount():
-            self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-            gpu_eval = check_gpu()
-            # self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
-            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
-            gpu_message = {
-                2: '小伙电脑顶呱呱啊',
-                1: '战斗完全木得问题',
-            }.get(gpu_eval, '您的显卡配置不够')
-            print(gpu_message)
-        else:
-            self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_DEFAULT)
-            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)  # OPENCL
-            print('您没有可识别的N卡')
-
-    def detect(self, frames):
-        try:
-            if frames.any():
-                frame_height, frame_width = frames.shape[:2]
-            frame_height += 0
-            frame_width += 0
-        except (cv2.error, AttributeError, UnboundLocalError) as e:
-            if self.errors < 2:
-                print(str(e))
-                self.errors += 1
-            return 0, 0, 0, 0, 0, 0, 0, frames
-
-        # 初始化返回数值
-        x0, y0, fire_range, fire_pos, fire_close, fire_ok = 0, 0, 0, 0, 0, 0
-
-        # 检测
-        classes, scores, boxes = self.model.detect(frames, self.conf_thd, self.nms_thd)
-        threat_list = []
-
-        # 画框
-        for (classid, score, box) in zip(classes, scores, boxes):
-            if score > self.std_confidence:
-                color = self.COLORS[int(classid) % len(self.COLORS)]
-                label = self.class_names[classid[0]] + ': ' + str(round(score[0], 3))
-                x, y, w, h = box
-                cv2.rectangle(frames, (x, y), (x + w, y + h), color, 2)
-                cv2.putText(frames, label, (int(x + w/2 - 4*len(label)), int(y + h/2 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-
-                # 计算威胁指数(正面画框面积的平方根除以鼠标移动到目标距离)
-                h_factor = (0.1875 if h > w else 0.5)
-                if classid == 0:
-                    h_factor = 0.5
-                dist = sqrt(pow(frame_width / 2 - (x + w / 2), 2) + pow(frame_height / 2 - (y + h * h_factor), 2))
-                threat_var = -(pow(w * h, 1/2) / dist if dist else 999)
-                if classid == 0:
-                    threat_var *= 6
-                threat_list.append([threat_var, box, classid])
-
-        if len(threat_list):
-            threat_list.sort(key=lambda x:x[0])
-            x_tht, y_tht, w_tht, h_tht = threat_list[0][1]
-
-            # 指向距离最近威胁的位移
-            x0 = x_tht + (w_tht - frame_width) / 2
-            if h_tht > w_tht:
-                y1 = y_tht + h_tht / 8 - frame_height / 2  # 爆头优先
-                y2 = y_tht + h_tht / 4 - frame_height / 2  # 击中优先
-                fire_close = (1 if frame_width / w_tht <= 8 else 0)
-                if abs(y1) <= abs(y2) or fire_close:
-                    y0 = y1
-                    fire_range = w_tht / 8
-                    fire_pos = 1
-                else:
-                    y0 = y2
-                    fire_range = w_tht / 4
-                    fire_pos = 2
-            else:
-                y0 = y_tht + (h_tht - frame_height) / 2
-                fire_range = min(w_tht, h_tht) / 2
-                fire_pos = 0
-
-            xpos = x0 + frame_width / 2
-            ypos = y0 + frame_height / 2
-            cv2.line(frames, (frame_width // 2, frame_height // 2), (int(xpos), int(ypos)), (0, 0, 255), 2)
-
-            # 查看是否已经指向目标
-            if 1/4 * w_tht > abs(frame_width / 2 - x_tht - w_tht / 2) and 2/5 * h_tht > abs(frame_height / 2 - y_tht - h_tht / 2):
-                fire_ok = 1
-
-        return len(threat_list), int(x0), int(y0), int(ceil(fire_range)), fire_pos, fire_close, fire_ok, frames
-
-
 # 确认窗口句柄与类名
 def get_window_info():
     supported_games = 'Valve001 CrossFire LaunchUnrealUWindowsClient LaunchCombatUWindowsClient UnrealWindow UnityWndClass'
     test_window = 'Notepad3 PX_WINDOW_CLASS Notepad Notepad++'
-    class_name = ''
-    hwnd_var = ''
+    class_name = None
+    hwnd_var = None
     testing_purpose = False
     while not hwnd_var:  # 等待游戏窗口出现
         hwnd_active = win32gui.GetForegroundWindow()
@@ -186,27 +66,12 @@ def get_window_info():
     return class_name, hwnd_var, testing_purpose
 
 
-# 重启脚本
-def restart():
-    windll.shell32.ShellExecuteW(None, 'runas', executable, __file__, None, 1)
-    exit(0)
-
-
 # 退出脚本
 def close():
     if not arr[2]:
         show_proc.terminate()
     detect_proc.terminate()
     mouse_close()
-
-
-# 加载配置与权重文件
-def load_file(file, config_filename, weight_filename):
-    cfg_filename = file + '.cfg'
-    weights_filename = file + '.weights'
-    config_filename[0] += cfg_filename
-    weight_filename[0] += weights_filename
-    return
 
 
 # 检测是否存在配置与权重文件
@@ -220,10 +85,12 @@ def check_file(file):
 
 
 # 移动鼠标(并射击)
-def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move_ry):
+def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move_ry, down_time, up_time):
     DPI_Var = windll.user32.GetDpiForWindow(window_hwnd_name) / 96
-    move_rx, a = track_opt(move_rx, a, DPI_Var)
-    move_ry, b = track_opt(move_ry, b, DPI_Var)
+    # move_rx, a = track_opt(move_rx, a)
+    # move_ry, b = track_opt(move_ry, b)
+    arr[20] = recoil_control[0] * shoot_times[0]  # if arr[12] == 1 or arr[14] else 0
+    move_range = sqrt(pow(a, 2) + pow(b, 2))
     enhanced_holdback = win32gui.SystemParametersInfo(SPI_GETMOUSE)
     if enhanced_holdback[1]:
         win32gui.SystemParametersInfo(SPI_SETMOUSE, [0, 0, 0], 0)
@@ -231,71 +98,69 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
     if mouse_speed != 10:
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
-    if fps_var and arr[17] and arr[11]:
-        recoilless_try = recoil_control[0] * shoot_times[0] if arr[12] == 1 or arr[14] else 0
-        move_range = sqrt(pow(a, 2) + pow(b - recoilless_try, 2))
+    if fps_var and arr[17] and arr[11] and arr[4]:
         a = cos((pi - atan(a/arr[18])) / 2) * (2*arr[18]) / DPI_Var
         b = cos((pi - atan(b/arr[18])) / 2) * (2*arr[18]) / DPI_Var
-        if move_range > 6 * ranges:
-            a *= uniform(0.9, 1.1)
-            b *= uniform(0.9, 1.1)
-        fps_factor = pow(fps_var/3, 1/3)
+        # if move_range > 6 * ranges:
+        #     a *= uniform(0.9, 1.1)
+        #     b *= uniform(0.9, 1.1)
+        fps_factorx = pow(fps_var/4, 1/3)
+        fps_factory = pow(fps_var/3, 1/3)
         x0 = {
-            'CrossFire': a / 2.719 * (client_ratio / (4/3)) / fps_factor,  # 32
-            'Valve001': a * 1.667 / fps_factor,  # 2.5
-            'LaunchCombatUWindowsClient': a * 1.319 / fps_factor,  # 10.0
-            'LaunchUnrealUWindowsClient': a / 2.557 / fps_factor,  # 20
-        }.get(win_class, a / fps_factor)
+            'CrossFire': a / 2.719 * (client_ratio / (4/3)) / fps_factorx,  # 32
+            'Valve001': a * 1.667 / fps_factorx,  # 2.5
+            'LaunchCombatUWindowsClient': a * 1.319 / fps_factorx,  # 10.0
+            'LaunchUnrealUWindowsClient': a / 2.557 / fps_factorx,  # 20
+        }.get(win_class, a / fps_factorx)
         y0 = {
-            'CrossFire': b / 2.719 * (client_ratio / (4/3)) / fps_factor,  # 32
-            'Valve001': b * 1.667 / fps_factor,  # 2.5
-            'LaunchCombatUWindowsClient': b * 1.319 / fps_factor,  # 10.0
-            'LaunchUnrealUWindowsClient': b / 2.557 / fps_factor,  # 20
-        }.get(win_class, b / fps_factor)
-        y0 += recoilless_try  # 简易压枪
-
-        if arr[12] == 1 or arr[14]:
-            y0 += (recoil_control * shoot_times[0])  # 简易压枪
+            'CrossFire': b / 2.719 * (client_ratio / (4/3)) / fps_factory,  # 32
+            'Valve001': b * 1.667 / fps_factory,  # 2.5
+            'LaunchCombatUWindowsClient': b * 1.319 / fps_factory,  # 10.0
+            'LaunchUnrealUWindowsClient': b / 2.557 / fps_factory,  # 20
+        }.get(win_class, b / fps_factory)
 
         mouse_xy(int(round(x0)), int(round(y0)))
 
     # 不分敌友射击
-    if win_class != 'CrossFire' or arr[19]:
-        if (go_fire or move_range < ranges) and arr[11]:
-            if (time() * 1000 - up_time[0]) > rate:
-                if not (GetAsyncKeyState(VK_LBUTTON) < 0 or GetKeyState(VK_LBUTTON) < 0):
+    pressed_time = time() * 1000 - down_time
+    released_time = time() * 1000 - up_time
+
+    # print(int(pressed_time), int(released_time))
+    if shoot_times[0] > 12:
+        shoot_times[0] = 12
+
+    if arr[21]:  # GetAsyncKeyState(VK_LBUTTON) < 0 or GetKeyState(VK_LBUTTON) < 0
+        if pressed_time > 30.6:  # or not arr[11]
+            mouse_up()
+            up_time = time() * 1000
+    else:
+        if (win_class != 'CrossFire' or arr[19]) and arr[4]:
+            if (go_fire or move_range < ranges):  #  and arr[11]
+                if released_time > rate:
                     mouse_down()
-                    press_time[0] = int(time() * 1000)
-                    if (time() * 1000 - up_time[0]) <= 219.4:
-                        shoot_times[0] += 1
-                        if shoot_times[0] > 12:
-                            shoot_times[0] = 12
+                    down_time = time() * 1000
+                    shoot_times[0] += 1
 
-        if (GetAsyncKeyState(VK_LBUTTON) < 0 or GetKeyState(VK_LBUTTON) < 0):
-            if (time() * 1000 - press_time[0]) > 30.6 or not arr[11]:
-                mouse_up()
-                up_time[0] = int(time() * 1000)
-
-    if (time() * 1000 - up_time[0]) > 219.4:
-        shoot_times[0] = 0
+        if released_time > 250:
+            shoot_times[0] = 0
 
     if enhanced_holdback[1]:
         win32gui.SystemParametersInfo(SPI_SETMOUSE, enhanced_holdback, 0)
     if mouse_speed != 10:
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, mouse_speed, 0)
 
-    return move_rx, move_ry
+    return move_rx, move_ry, down_time, up_time
 
 
-# 追踪优化
-def track_opt(record_list, range_m, vDPI):
+# 傻追踪优化
+def track_opt(record_list, range_m):
     if len(record_list):
-        if abs(median(record_list) - range_m) <= 10*vDPI and abs(range_m) <= 100*vDPI:
+        if abs(median(record_list) - range_m) <= 15 and abs(range_m) <= 90:
             record_list.append(range_m)
         else:
             record_list.clear()
         if len(record_list) > sqrt(show_fps[0]) and arr[4]:
-            range_m *= pow(show_fps[0]/2, 1/3)
+            range_m *= pow(show_fps[0]/3, 1/3)
             record_list.clear()
     else:
         record_list.append(range_m)
@@ -322,7 +187,7 @@ def check_status(exit0, mouse):
         arr[17] = 0
     if GetAsyncKeyState(0x50) < 0:  # P
         close()
-        restart()
+        restart(__file__)
 
     return exit0, mouse
 
@@ -365,22 +230,14 @@ def show_frames(output_pipe, array):
 
 
 # 分析进程
-def detection(que, array, frame_in):
-    Analysis = FrameDetection(array[0])
+def detection(array):
     array[1] = 1
-    while True:
-        if not que.empty():
-            try:
-                frame = que.get_nowait()
-                que.task_done()
-                array[1] = 2
-                if array[10]:
-                    array[11], array[7], array[8], array[9], array[12], array[14], array[16], frame = Analysis.detect(frame)
-                if not array[2]:
-                    frame_in.send(frame)
-            except (queue.Empty, TypeError):
-                continue
-        array[1] = 1
+    def on_click(x, y, button, pressed):
+        array[21] = 1 if pressed else 0
+        # print(array[21])
+
+    with Listener(on_click=on_click) as listener:
+        listener.join()
 
 
 # 主程序
@@ -390,7 +247,7 @@ if __name__ == '__main__':
 
     # 检查管理员权限
     if not is_admin():
-        restart()
+        restart(__file__)
 
     # 设置高DPI不受影响
     set_dpi()
@@ -428,14 +285,15 @@ if __name__ == '__main__':
     move_record_y = []
     shoot_times = [0]
     recoil_control = [0]
+    d_time, u_time = 0, 0
     cf_enemy_color = np.array([3487638, 3487639, 3487640, 3487641, 3422105, 3422106, 3422362, 3422363, 3422364, 3356828, 3356829, 3356830, 3356831, 3291295, 3291551, 3291552, 3291553, 3291554, 3226018, 3226019, 3226020, 3226276, 3226277, 3160741, 3160742, 3160743, 3160744, 3095208, 3095209, 3095465, 3095466, 3095467, 3029931, 3029932, 3029933, 3029934, 3030190, 2964654, 2964655, 2964656, 2964657, 2899121, 2899122, 2899123, 2899379, 2899380, 2833844, 2833845, 2833846, 2833847, 2768311, 2768567, 2768568, 2768569, 2768570, 2703034, 2703035, 2703036, 2703292, 2703292, 2703293, 2637757, 2637758, 2637759, 2637760, 2572224, 2572225, 2572481, 2572482, 2572483, 2506948, 2506949, 2506950, 2507206, 2507207, 2441671, 2441672, 2441673, 2441674, 2376138, 2376139, 2376395, 2376396, 2376397, 2310861, 2310862, 2310863, 2310864, 2311120, 2245584, 2245585, 2245586, 2245587, 2180051, 2180052, 2180308, 2180309, 2180310, 2114774, 2114775, 2114776, 2114777, 2049241, 2049497, 2049498, 2049499, 2049500, 1983964, 1983965, 1983966, 1984222, 1984223, 1918687, 1918688, 1918689, 1918690, 1853154, 1853155, 1853411, 1853412, 1853413, 1787877, 1787878, 1787879, 1787880, 1788136, 1722600, 1722601, 1722602, 1722603, 1657067, 1657068, 1657069, 1657325, 1657326, 1591790, 1591791, 1591792, 1591793, 1526514])  # CF敌方红名库
 
     # 如果文件不存在则退出
     check_file('yolov4-tiny')
 
     # 分享数据以及展示新进程
-    arr = Array('i', range(21))
-    '''
+    arr = Array('i', range(22))
+    """
     0  窗口句柄
     1  分析进程状态
     2  是否全屏
@@ -456,7 +314,9 @@ if __name__ == '__main__':
     17 自瞄自火
     18 基础边长
     19 火线红名
-    '''
+    20 后坐力控制
+    21 鼠标按键
+    """
     arr[1] = 0  # 分析进程状态
     arr[2] = 0  # 是否全屏
     arr[3] = 0  # FPS值
@@ -474,7 +334,8 @@ if __name__ == '__main__':
     arr[17] = 1  # 自瞄/自火
     arr[18] = 0  # 基础边长
     arr[19] = 0  # CF下红名
-    detect_proc = Process(target=detection, args=(queue, arr, frame_input,))
+    arr[20] = 0  # 简易后坐力控制
+    detect_proc = Process(target=detection, args=(arr,))
 
     # 寻找读取游戏窗口类型并确认截取位置
     window_class_name, window_hwnd_name, test_win[0] = get_window_info()
@@ -508,6 +369,10 @@ if __name__ == '__main__':
     # 初始化截图类
     win_cap = WindowCapture(window_class_name, window_hwnd_name)
 
+    # 初始化分析类
+    # Analysis = FrameDetectionX(arr[0])
+    Analysis = FrameDetection34(arr[0])
+
     # 计算基础边长
     arr[18] = win_cap.get_side_len()
 
@@ -527,8 +392,8 @@ if __name__ == '__main__':
     cutw, cuth = win_cap.get_cut_info()
 
     while True:
-        # screenshot = win_cap.grab_screenshot()
-        screenshot = win_cap.get_screenshot()
+        screenshot = win_cap.grab_screenshot()
+        # screenshot = win_cap.get_screenshot()
         if window_class_name == 'CrossFire':
             cut_scrn = screenshot[cuth // 2 + winh // 16 : cuth // 2 + winh // 15, cutw // 2 - winw // 40 : cutw // 2 + winw // 40]  # 从截屏中截取红名区域
             # 将红名区域rgb转为十进制数值
@@ -549,11 +414,15 @@ if __name__ == '__main__':
             print('窗口已关闭\n' + str(e))
             break
 
-        queue.put_nowait(screenshot)
-        queue.join()
+        # queue.put_nowait(screenshot)
+        # queue.join()
+
+        if arr[10]:
+            arr[11], arr[7], arr[8], arr[9], arr[12], arr[14], arr[16], screenshot = Analysis.detect(screenshot, arr[20])
+        if not arr[2]:
+            frame_input.send(screenshot)
 
         exit_program, arr[4] = check_status(exit_program, arr[4])
-
         if exit_program:
             break
 
@@ -563,7 +432,7 @@ if __name__ == '__main__':
                     arr[13] = (944 if arr[14] or arr[12] != 1 else 1694)
                 elif arr[15] == 2:  # 副武器
                     arr[13] = (694 if arr[14] or arr[12] != 1 else 944)
-                move_record_x, move_record_y = control_mouse(arr[7], arr[8], show_fps[0], arr[9], arr[13] / 10, arr[16], window_class_name, move_record_x, move_record_y)
+            move_record_x, move_record_y, d_time, u_time = control_mouse(arr[7], arr[8], show_fps[0], arr[9], arr[13] / 10, arr[16], window_class_name, move_record_x, move_record_y, d_time, u_time)
 
         time_used = time() - ini_sct_time
         ini_sct_time = time()

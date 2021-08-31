@@ -9,8 +9,8 @@ import mss
 
 class WindowCapture:  # 截图类
     # 类属性
-    hwnd = ''  # 窗口句柄
-    windows_class = ''  # 窗口类名
+    hwnd = None  # 窗口句柄
+    windows_class = None  # 窗口类名
     ratio_h2H, ratio_w2h = 1, 1  # 截图比例(高对于窗口高,宽对于高)
     total_w, total_h = 0, 0  # 窗口内宽高
     cut_w, cut_h = 0, 0  # 截取宽高
@@ -18,7 +18,6 @@ class WindowCapture:  # 截图类
     actual_x, actual_y = 0, 0  # 截图左上角屏幕位置x,y
     left_corner = [0, 0]  # 窗口左上角屏幕位置
     errors = 0  # 仅仅显示一次错误
-    wDC, dcObj, cDC= '', '', ''  # gdip截图初始化
     sct = mss.mss()  # mss截图初始化
 
     # 构造函数
@@ -33,9 +32,6 @@ class WindowCapture:  # 截图类
         if not self.hwnd:
             raise Exception(f'窗口类名未找到: {window_class}')
         self.update_window_info()
-        self.wDC = win32gui.GetWindowDC(self.hwnd)
-        self.dcObj = win32ui.CreateDCFromHandle(self.wDC)
-        self.cDC = self.dcObj.CreateCompatibleDC()
 
     def update_window_info(self):
         try:
@@ -68,20 +64,30 @@ class WindowCapture:  # 截图类
     def get_screenshot(self):  # 只能在windows上使用
         # 获取截图相关
         try:
+            wDC = win32gui.GetWindowDC(self.hwnd)
+            dcObj = win32ui.CreateDCFromHandle(wDC)
+            cDC = dcObj.CreateCompatibleDC()
             dataBitMap = win32ui.CreateBitmap()
-            dataBitMap.CreateCompatibleBitmap(self.dcObj, self.cut_w, self.cut_h)
-            self.cDC.SelectObject(dataBitMap)
-            self.cDC.BitBlt((0, 0), (self.cut_w, self.cut_h), self.dcObj, (self.offset_x, self.offset_y), SRCCOPY)
+            dataBitMap.CreateCompatibleBitmap(dcObj, self.cut_w, self.cut_h)
+            cDC.SelectObject(dataBitMap)
+            cDC.BitBlt((0, 0), (self.cut_w, self.cut_h), dcObj, (self.offset_x, self.offset_y), SRCCOPY)
 
             # 转换使得opencv可读
             signedIntsArray = dataBitMap.GetBitmapBits(True)
             cut_img = np.frombuffer(signedIntsArray, dtype='uint8')
             cut_img.shape = (self.cut_h, self.cut_w, 4)
+
+            # 释放资源
+            dcObj.DeleteDC()
+            cDC.DeleteDC()
+            win32gui.ReleaseDC(self.hwnd, wDC)
+            win32gui.DeleteObject(dataBitMap.GetHandle())
+
             cut_img = cut_img[..., :3]  # 去除alpha
             cut_img = np.ascontiguousarray(cut_img)  # 转换减少错误
-            win32gui.DeleteObject(dataBitMap.GetHandle())
             return cut_img
-        except (pywintypes.error, win32ui.error, ValueError):
+        except (pywintypes.error, win32ui.error, ValueError) as e:
+            print('截图出错\n' + str(e))
             return None
 
     def get_window_info(self):
@@ -104,9 +110,8 @@ class WindowCapture:  # 截图类
         return (self.actual_x, self.actual_y, self.actual_x + self.cut_w, self.actual_y + self.cut_h)
 
     def grab_screenshot(self):
-        return np.array(self.sct.grab(self.get_region()), dtype=np.uint8)[..., :3]
-
-    def release_resource(self):  # 释放资源
-        self.dcObj.DeleteDC()
-        self.cDC.DeleteDC()
-        win32gui.ReleaseDC(self.hwnd, self.wDC)
+        scrnshot = np.array(self.sct.grab(self.get_region()), dtype=np.uint8)[..., :3]
+        return np.ascontiguousarray(scrnshot)
+        
+    def release_resource(self):
+        pass

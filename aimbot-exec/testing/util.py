@@ -1,7 +1,7 @@
+from sys import exit, executable
 from platform import release
 from ctypes import windll
 from os import system
-from sys import exit
 import nvidia_smi
 import pywintypes
 import win32gui
@@ -60,6 +60,12 @@ def is_admin():
     except OSError as err:
         print('OS error: {0}'.format(err))
         return False
+
+
+# 重启脚本
+def restart(file_path):
+    windll.shell32.ShellExecuteW(None, 'runas', executable, file_path, None, 1)
+    exit(0)
 
 
 # 清空命令指示符输出

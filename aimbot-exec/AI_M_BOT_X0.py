@@ -197,7 +197,7 @@ class FrameDetection:
         try:
             self.session = onnxruntime.InferenceSession('yolox_nano.onnx', providers=self.EP_list)  # 推理构造
         except RuntimeError:
-            self.session.set_providers(self.EP_list[len(self.EP_list)-1])
+            self.session = onnxruntime.InferenceSession('yolox_nano.onnx', providers='CPUExecutionProvider')  # 推理构造
             self.device_name = 'CPU'
         if self.device_name == 'GPU':
             gpu_eval = check_gpu()
@@ -279,7 +279,7 @@ class FrameDetection:
                 h_factor = (0.1875 if h > w else 0.5)
                 dist = sqrt(pow(frame_width / 2 - (x + w / 2), 2) + pow(frame_height / 2 - (y + h * h_factor), 2))
                 threat_var = -(pow(w * h, 1/2) / dist if dist else 999)
-                threat_list.append([threat_var, [x, y, w, h]])
+                threat_list.append([threat_var, [x, y, w, h], final_cls_ind])
 
         if len(threat_list):
             threat_list.sort(key=lambda x1: x1[0])

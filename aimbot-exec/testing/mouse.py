@@ -20,12 +20,15 @@ class MOUSEINPUT(Structure):
                 ('time', DWORD),
                 ('dwExtraInfo', ULONG_PTR))
 
+
 class _INPUTunion(Union):
     _fields_ = (('mi', MOUSEINPUT), ('mi', MOUSEINPUT))
+
 
 class INPUT(Structure):
     _fields_ = (('type', DWORD),
                 ('union', _INPUTunion))
+
 
 def SendInput(*inputs):
     nInputs = len(inputs)
@@ -34,19 +37,24 @@ def SendInput(*inputs):
     cbSize = c_int(sizeof(INPUT))
     return windll.user32.SendInput(nInputs, pInputs, cbSize)
 
+
 def Input(structure):
     return INPUT(0, _INPUTunion(mi=structure))
+
 
 def MouseInput(flags, x, y, data):
     return MOUSEINPUT(x, y, data, flags, 0, None)
 
+
 def Mouse(flags, x=0, y=0, data=0):
     return Input(MouseInput(flags, x, y, data))
+
 
 def mouse_xy(x, y):  # for import
     if gmok:
         return gm.moveR(x, y)
     return SendInput(Mouse(0x0001, x, y))
+
 
 def mouse_down(key = 1):  # for import
     if gmok:
@@ -56,6 +64,7 @@ def mouse_down(key = 1):  # for import
     elif key == 2:
         return SendInput(Mouse(0x0008))
 
+
 def mouse_up(key = 1):  # for import
     if gmok:
         return gm.release()
@@ -63,6 +72,7 @@ def mouse_up(key = 1):  # for import
         return SendInput(Mouse(0x0004))
     elif key == 2:
         return SendInput(Mouse(0x0010))
+
 
 def mouse_close():  # for import
     if gmok:
