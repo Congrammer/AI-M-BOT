@@ -1,4 +1,8 @@
 """
+New Detection method(onnxruntime) modified from Project YOLOX
+YOLOX Project Authors: Zheng Ge, Songtao Liu, Feng Wang, Zeming Li, Jian Sun
+YOLOX Project website: https://github.com/Megvii-BaseDetection/YOLOX
+New Detection method(onnxruntime) cooperator: Barry
 Detection code modified from project AIMBOT-YOLO
 Detection code Author: monokim
 Detection project website: https://github.com/monokim/AIMBOT-YOLO
@@ -87,8 +91,8 @@ def check_file(file):
 # 移动鼠标(并射击)
 def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move_ry, down_time, up_time):
     DPI_Var = windll.user32.GetDpiForWindow(window_hwnd_name) / 96
-    # move_rx, a = track_opt(move_rx, a)
-    # move_ry, b = track_opt(move_ry, b)
+    move_rx, a = track_opt(move_rx, a)
+    move_ry, b = track_opt(move_ry, b)
     arr[20] = recoil_control[0] * shoot_times[0]  # if arr[12] == 1 or arr[14] else 0
     move_range = sqrt(pow(a, 2) + pow(b, 2))
     enhanced_holdback = win32gui.SystemParametersInfo(SPI_GETMOUSE)
@@ -122,27 +126,22 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
         mouse_xy(int(round(x0)), int(round(y0)))
 
     # 不分敌友射击
-    pressed_time = time() * 1000 - down_time
-    released_time = time() * 1000 - up_time
-
-    # print(int(pressed_time), int(released_time))
-    if shoot_times[0] > 12:
-        shoot_times[0] = 12
-
     if arr[21]:  # GetAsyncKeyState(VK_LBUTTON) < 0 or GetKeyState(VK_LBUTTON) < 0
-        if pressed_time > 30.6:  # or not arr[11]
+        if time() * 1000 - down_time > 30.6:  # or not arr[11]
             mouse_up()
             up_time = time() * 1000
-    else:
-        if (win_class != 'CrossFire' or arr[19]) and arr[4]:
-            if (go_fire or move_range < ranges):  #  and arr[11]
-                if released_time > rate:
-                    mouse_down()
-                    down_time = time() * 1000
-                    shoot_times[0] += 1
+    elif (win_class != 'CrossFire' or arr[19]) and arr[4]:
+        if (go_fire or move_range < ranges):  # and arr[11]
+            if time() * 1000 - up_time > rate:
+                mouse_down()
+                down_time = time() * 1000
+                shoot_times[0] += 1
 
-        if released_time > 250:
-            shoot_times[0] = 0
+    if time() * 1000 - up_time > 219.4:
+        shoot_times[0] = 0
+
+    if shoot_times[0] > 12:
+        shoot_times[0] = 12
 
     if enhanced_holdback[1]:
         win32gui.SystemParametersInfo(SPI_SETMOUSE, enhanced_holdback, 0)
@@ -234,7 +233,6 @@ def detection(array):
     array[1] = 1
     def on_click(x, y, button, pressed):
         array[21] = 1 if pressed else 0
-        # print(array[21])
 
     with Listener(on_click=on_click) as listener:
         listener.join()
