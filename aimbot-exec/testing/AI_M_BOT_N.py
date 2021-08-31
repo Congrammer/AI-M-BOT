@@ -16,11 +16,11 @@ Mouse event method website: https://github.com/ekknod/logitech-cve
 Mouse event method project Author: ekknod
 """
 
-from win32con import VK_LBUTTON, VK_END, PROCESS_ALL_ACCESS, SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
-from win32api import GetAsyncKeyState, GetKeyState, GetCurrentProcessId, OpenProcess
-from multiprocessing import Process, Array, Pipe, freeze_support, JoinableQueue
+from win32con import VK_END, PROCESS_ALL_ACCESS, SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
+from win32api import GetAsyncKeyState, GetCurrentProcessId, OpenProcess
 from win32process import SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS
 from util import set_dpi, is_full_screen, is_admin, clear, restart
+from multiprocessing import Process, Array, Pipe, freeze_support
 from mouse import mouse_xy, mouse_down, mouse_up, mouse_close
 from darknet_yolo34 import FrameDetection34
 from math import sqrt, pow, atan, cos, pi
@@ -36,7 +36,6 @@ from ctypes import windll
 import numpy as np
 import pywintypes
 import win32gui
-import queue
 import cv2
 import os
 
@@ -105,9 +104,9 @@ def control_mouse(a, b, fps_var, ranges, rate, go_fire, win_class, move_rx, move
     if fps_var and arr[17] and arr[11] and arr[4]:
         a = cos((pi - atan(a/arr[18])) / 2) * (2*arr[18]) / DPI_Var
         b = cos((pi - atan(b/arr[18])) / 2) * (2*arr[18]) / DPI_Var
-        # if move_range > 6 * ranges:
-        #     a *= uniform(0.9, 1.1)
-        #     b *= uniform(0.9, 1.1)
+        if move_range > 6 * ranges:
+            a *= uniform(0.9, 1.1)
+            b *= uniform(0.9, 1.1)
         fps_factorx = pow(fps_var/4, 1/3)
         fps_factory = pow(fps_var/3, 1/3)
         x0 = {
@@ -273,7 +272,6 @@ if __name__ == '__main__':
     else:
         os.nice(1)
 
-    queue = JoinableQueue()  # 初始化队列
     frame_output, frame_input = Pipe(False)  # 初始化管道(receiving,sending)
     press_time, up_time, show_fps = [0], [0], [1]
     process_time = deque()
@@ -411,9 +409,6 @@ if __name__ == '__main__':
         except (AttributeError, pywintypes.error) as e:
             print('窗口已关闭\n' + str(e))
             break
-
-        # queue.put_nowait(screenshot)
-        # queue.join()
 
         if arr[10]:
             arr[11], arr[7], arr[8], arr[9], arr[12], arr[14], arr[16], screenshot = Analysis.detect(screenshot, arr[20])
