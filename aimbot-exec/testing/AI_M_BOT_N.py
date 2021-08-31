@@ -44,7 +44,7 @@ import os
 def get_window_info():
     supported_games = 'Valve001 CrossFire LaunchUnrealUWindowsClient LaunchCombatUWindowsClient UnrealWindow UnityWndClass'
     test_window = 'Notepad3 PX_WINDOW_CLASS Notepad Notepad++'
-    emulator_window = 'BS2CHINAUI Qt5154QWindowOwnDCIcon LSPlayerMainFrame'
+    emulator_window = 'BS2CHINAUI Qt5154QWindowOwnDCIcon LSPlayerMainFrame TXGuiFoundation Qt5QWindowIcon LDPlayerMainFrame'
     class_name = None
     hwnd_var = None
     testing_purpose = False
