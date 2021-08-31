@@ -9,7 +9,7 @@ import mss
 
 class WindowCapture:  # 截图类
     # 类属性
-    hwnd = None  # 窗口句柄
+    hwnd, outerhwnd = None, None  # 窗口句柄
     windows_class = None  # 窗口类名
     ratio_h2H, ratio_w2h = 1, 1  # 截图比例(高对于窗口高,宽对于高)
     total_w, total_h = 0, 0  # 窗口内宽高
@@ -24,11 +24,11 @@ class WindowCapture:  # 截图类
     def __init__(self, window_class, window_hwnd, h2H = 4/9, w2h = 1.6):
         self.windows_class = window_class
         self.ratio_h2H, self.ratio_w2h = h2H, w2h
+        self.hwnd = window_hwnd
         try:
-            self.hwnd = win32gui.FindWindow(window_class, None)
+            self.outerhwnd = win32gui.FindWindow(window_class, None)
         except pywintypes.error as e:
             print('找窗口错误\n' + str(e))
-            self.hwnd = window_hwnd
         if not self.hwnd:
             raise Exception(f'窗口类名未找到: {window_class}')
         self.update_window_info()
@@ -100,7 +100,7 @@ class WindowCapture:  # 截图类
         return self.actual_x, self.actual_y
 
     def get_window_left(self):
-        return win32gui.GetWindowRect(self.hwnd)[0]
+        return win32gui.GetWindowRect(self.outerhwnd)[0]
 
     def get_side_len(self):
         return int(self.total_h / (2/3))
@@ -112,6 +112,6 @@ class WindowCapture:  # 截图类
     def grab_screenshot(self):
         scrnshot = np.array(self.sct.grab(self.get_region()), dtype=np.uint8)[..., :3]
         return np.ascontiguousarray(scrnshot)
-        
+
     def release_resource(self):
         pass

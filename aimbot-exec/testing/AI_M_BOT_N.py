@@ -44,6 +44,7 @@ import os
 def get_window_info():
     supported_games = 'Valve001 CrossFire LaunchUnrealUWindowsClient LaunchCombatUWindowsClient UnrealWindow UnityWndClass'
     test_window = 'Notepad3 PX_WINDOW_CLASS Notepad Notepad++'
+    emulator_window = 'BS2CHINAUI Qt5154QWindowOwnDCIcon LSPlayerMainFrame'
     class_name = None
     hwnd_var = None
     testing_purpose = False
@@ -54,11 +55,13 @@ def get_window_info():
         except pywintypes.error:
             continue
 
-        if class_name not in (supported_games + test_window):
+        if class_name not in (supported_games + test_window + emulator_window):
             print('请使支持的游戏/程序窗口成为活动窗口...')
         else:
             try:
                 hwnd_var = win32gui.FindWindow(class_name, None)
+                if class_name in emulator_window:
+                    hwnd_var = win32gui.FindWindowEx(hwnd_var, None, None, None)
             except pywintypes.error:
                 print('您正使用沙盒')
                 hwnd_var = hwnd_active
@@ -213,7 +216,8 @@ def show_frames(output_pipe, array):
             show_str3 = 'Fire rate is at ' + str('{:02.0f}'.format((10000 / (array[13] + 306)))) + ' RPS'
             show_str4 = 'Please enjoy coding ^_^' if array[17] else 'Please enjoy coding @_@'
             if show_img.any():
-                show_img = cv2.resize(show_img, (array[5], int(array[5] / 1.6)))
+                show_img_h, show_img_w = show_img.shape[:2]
+                show_img = cv2.resize(show_img, (array[5], int(array[5] / show_img_w * show_img_h)))
                 img_ex = cv2.resize(img_ex, (array[5], int(array[5] / 2)))
                 cv2.putText(show_img, show_str0, (int(array[5] / 25), int(array[5] / 12)), font, array[5] / 600, (127, 255, 0), 2, cv2.LINE_AA)
                 cv2.putText(img_ex, show_str1, (10, int(array[5] / 9)), font, array[5] / 450, show_color, 1, cv2.LINE_AA)
@@ -358,12 +362,14 @@ if __name__ == '__main__':
     while not window_ready:
         sleep(1)
         win_client_rect = win32gui.GetClientRect(window_hwnd_name)
+        win_pos = win32gui.ClientToScreen(window_hwnd_name, (0, 0))
         if win_client_rect[2] - win_client_rect[0] > 0 and win_client_rect[3] - win_client_rect[1] > 0:
             window_ready = 1
     client_ratio = (win_client_rect[2] - win_client_rect[0]) / (win_client_rect[3] - win_client_rect[1])
+    print(win_pos[0], win_pos[1], win_client_rect[2], win_client_rect[3])
 
     # 初始化截图类
-    win_cap = WindowCapture(window_class_name, window_hwnd_name)
+    win_cap = WindowCapture(window_class_name, window_hwnd_name, 4/9, 192/224)
 
     # 初始化分析类
     # Analysis = FrameDetectionX(arr[0])
@@ -405,6 +411,20 @@ if __name__ == '__main__':
 
         try:
             screenshot.any()
+            frame_height, frame_width = screenshot.shape[:2]
+
+            # 画实心框避免错误检测武器与手
+            if window_class_name == 'CrossFire':
+                cv2.rectangle(screenshot, (int(frame_width*5/6), int(frame_height*3/4)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
+                cv2.rectangle(screenshot, (0, int(frame_height*3/4)), (int(frame_width*1/6), frame_height), (127, 127, 127), cv2.FILLED)
+                if frame_width / frame_height > 1.3:
+                    frame_width = int(frame_width / 4 * 3)
+                    dim = (frame_width, frame_height)
+                    screenshot = cv2.resize(screenshot, dim, interpolation=cv2.INTER_AREA)
+            elif window_class_name == 'Valve001':
+                cv2.rectangle(screenshot, (int(frame_width*5/6), int(frame_height*2/3)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
+                cv2.rectangle(screenshot, (0, int(frame_height*2/3)), (int(frame_width*1/6), frame_height), (127, 127, 127), cv2.FILLED)
+
             arr[5] = (150 if win_cap.get_window_left() - 10 < 150 else win_cap.get_window_left() - 10)
         except (AttributeError, pywintypes.error) as e:
             print('窗口已关闭\n' + str(e))
