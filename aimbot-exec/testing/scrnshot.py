@@ -99,7 +99,7 @@ class WindowCapture:  # 截图类
         return win32gui.GetWindowRect(self.outerhwnd)[0]
 
     def get_side_len(self):
-        return int(self.total_h / (2/3))
+        return int(self.total_h * (2/3))
 
     def get_region(self):
         self.update_window_info()
