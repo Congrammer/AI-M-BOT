@@ -254,8 +254,6 @@ def main():
     if DPI_Var[0] == 0.0:
         DPI_Var[0] = 1.0
 
-    
-
     # 初始化变量以及提升进程优先级
     if platform == 'win32':
         pid = GetCurrentProcessId()
