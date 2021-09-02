@@ -4,7 +4,7 @@
 
 [![img](https://img.shields.io/github/stars/JiaPai12138/AI-M-BOT?label=点赞)](https://github.com/JiaPai12138/AI-M-BOT)  [![img](https://img.shields.io/github/forks/JiaPai12138/AI-M-BOT?label=克隆)](https://github.com/JiaPai12138/AI-M-BOT)  [![img](https://img.shields.io/github/last-commit/JiaPai12138/AI-M-BOT?label=最近提交)](https://github.com/JiaPai12138/AI-M-BOT)  [![img](https://img.shields.io/github/release/JiaPai12138/AI-M-BOT?label=最新版本)](https://github.com/JiaPai12138/AI-M-BOT/releases)  [![img](https://img.shields.io/github/license/JiaPai12138/AI-M-BOT?label=许可证)](https://github.com/JiaPai12138/AI-M-BOT/blob/main/LICENSE)  [![img](https://img.shields.io/badge/URL-帮助文档-blue)](https://github.com/JiaPai12138/AI-M-BOT/blob/main/使用说明.rtf)
 
-`YOLOv4-tiny and OpenCV-gpu based aimbot powered up by multiprocessing`
+`YOLOv4-tiny (yolox) and OpenCV-gpu (onnxruntime-gpu) based aimbot powered up by multiprocessing (and pid control in the future)`
 ```
 1, 本作者不对任何由本开源软件造成的任何问题(包括封号)负责。。。
 2, 本开源免费软件为学习/娱乐之用，禁止贩卖，欢迎参与改进。。。
