@@ -35,12 +35,13 @@ def mouse_move_lr(num):
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
     sleep(0.3)
-    mouse_event(MOUSEEVENTF_MOVE, int(num/DPI_Var), 0, 0, 0)
-    sleep(0.3)
+    for i in range(20):
+        mouse_event(MOUSEEVENTF_MOVE, int(num/DPI_Var), 0, 0, 0)
+        sleep(0.2)
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
     sleep(0.3)
-    mouse_event(MOUSEEVENTF_MOVE, -int(num/2/DPI_Var), 0, 0, 0)
+    mouse_event(MOUSEEVENTF_MOVE, -int(num*10/DPI_Var), 0, 0, 0)
     sleep(0.3)
 
     if enhanced_holdback[1]:
@@ -76,10 +77,10 @@ with mss() as sct:
     while True:
         sleep(0.1)
         if is_pressed('left'):
-            mouse_move_lr(-50)
+            mouse_move_lr(-5)
             moved = 1
         elif is_pressed('right'):
-            mouse_move_lr(50)
+            mouse_move_lr(5)
             moved = 1
         if moved:
             sct_img = sct.grab(monitor)
