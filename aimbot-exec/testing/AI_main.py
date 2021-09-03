@@ -391,8 +391,8 @@ def main():
 
             # 画实心框避免错误检测武器与手
             if window_class_name == 'CrossFire':
-                cv2.rectangle(screenshot, (int(frame_width*5/6), int(frame_height*3/4)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
-                cv2.rectangle(screenshot, (0, int(frame_height*3/4)), (int(frame_width*1/6), frame_height), (127, 127, 127), cv2.FILLED)
+                cv2.rectangle(screenshot, (int(frame_width*3/4), int(frame_height*2/3)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
+                cv2.rectangle(screenshot, (0, int(frame_height*2/3)), (int(frame_width*1/4), frame_height), (127, 127, 127), cv2.FILLED)
                 if frame_width / frame_height > 1.3:
                     frame_width = int(frame_width / 4 * 3)
                     dim = (frame_width, frame_height)
