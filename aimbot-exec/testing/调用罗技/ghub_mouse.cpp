@@ -1,5 +1,6 @@
 //fork from https://github.com/ekknod/logitech-cve
 #include "ghub_mouse.h"
+#include <math.h>
 #include <windows.h>
 #include <winternl.h>
 #pragma comment(lib, "ntdll.lib")

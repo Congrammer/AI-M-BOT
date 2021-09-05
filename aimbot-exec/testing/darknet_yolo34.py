@@ -45,7 +45,7 @@ class FrameDetection34:
         if cv2.cuda.getCudaEnabledDeviceCount():
             self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
             gpu_eval = check_gpu()
-            # self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
+            # self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)  # 似乎需要模型支持半精度浮点
             self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
             gpu_message = {
                 2: '小伙电脑顶呱呱啊',
@@ -54,7 +54,7 @@ class FrameDetection34:
             print(gpu_message)
         else:
             self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_DEFAULT)
-            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)  # OPENCL
+            self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
             print('您没有可识别的N卡')
 
     def detect(self, frames, recoil_coty):
@@ -92,7 +92,7 @@ class FrameDetection34:
                     threat_var *= 6
                 threat_list.append([threat_var, box, classid])
 
-        x0, y0, fire_range, fire_pos, fire_close, fire_ok, frame = threat_handling(frames, threat_list, recoil_coty, frame_height, frame_width)
+        x0, y0, fire_range, fire_pos, fire_close, fire_ok, frames = threat_handling(frames, threat_list, recoil_coty, frame_height, frame_width)
 
         return len(threat_list), int(x0), int(y0), int(ceil(fire_range)), fire_pos, fire_close, fire_ok, frames
 

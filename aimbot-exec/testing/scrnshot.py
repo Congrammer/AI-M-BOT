@@ -65,7 +65,7 @@ class WindowCapture:  # 截图类
                 self.errors += 1
             pass
 
-    def get_screenshot(self):  # 只能在windows上使用
+    def get_screenshot(self):  # 只能在windows上使用,画面无法被遮蔽
         self.update_window_info()
         try:
             dataBitMap = win32ui.CreateBitmap()
