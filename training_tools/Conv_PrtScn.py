@@ -49,9 +49,7 @@ if __name__ == '__main__':
         image_source = cv2.imdecode(np.fromfile(source_path + file, dtype=np.uint8), -1)  # 读取图片
         if RandomFileTime(source_path + file):
             fail_change_time += 1
-        # image_size_h, image_size_w = image_source.shape[:2]  # 设定长宽
-        # if round(image_size_w / image_size_h, 2) >= 2.35:
-        #     image_size_w = image_size_h * 16 // 9
+
         image = cv2.resize(image_source, (512, 320), 0, 0, cv2.INTER_LINEAR)  # 修改尺寸
         cv2.imencode('.png', image, [int(cv2.IMWRITE_PNG_COMPRESSION), 3])[1].tofile(target_path + file[0:file.find('.')] + '.png')  # 重命名并且保存
 

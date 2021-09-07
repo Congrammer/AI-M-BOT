@@ -50,8 +50,6 @@ class WindowCapture:  # 截图类
             self.cut_h = int(self.total_h * self.ratio_h2H)
             self.cut_w = int(self.cut_h * self.ratio_w2h)
 
-            if self.windows_class == 'CrossFire':  # 画面实际4:3简单拉平
-                self.cut_w = int(self.cut_w * (self.total_w / self.total_h) * 3 / 4)
             if (self.cut_w > min(self.total_w, windll.user32.GetSystemMetrics(0))) or (self.cut_h > min(self.total_h, windll.user32.GetSystemMetrics(1))):
                 raise Exception(f'这宽高不行: {self.cut_w} {self.cut_h}')
 

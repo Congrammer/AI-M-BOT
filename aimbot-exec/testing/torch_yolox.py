@@ -73,21 +73,6 @@ class FrameDetectionX:
                 self.errors += 1
             return 0, 0, 0, 0, 0, 0, 0, frames
 
-        # 画实心框避免错误检测武器与手
-        if self.win_class_name == 'CrossFire':
-            cv2.rectangle(frames, (int(frame_width*3/5), int(frame_height*3/4)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
-            cv2.rectangle(frames, (0, int(frame_height*3/4)), (int(frame_width*2/5), frame_height), (127, 127, 127), cv2.FILLED)
-            if frame_width / frame_height > 1.3:
-                frame_width = int(frame_width / 4 * 3)
-                dim = (frame_width, frame_height)
-                frames = cv2.resize(frames, dim, interpolation=cv2.INTER_AREA)
-        elif self.win_class_name == 'Valve001':
-            cv2.rectangle(frames, (int(frame_width*3/4), int(frame_height*3/5)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
-            cv2.rectangle(frames, (0, int(frame_height*3/5)), (int(frame_width*1/4), frame_height), (127, 127, 127), cv2.FILLED)
-
-        # 初始化返回数值
-        x0, y0, fire_range, fire_pos, fire_close, fire_ok = 0, 0, 0, 0, 0, 0
-
         # 预处理
         img, ratio = preprocess(frames, self.input_shape, self.mean, self.std)
 
@@ -122,7 +107,7 @@ class FrameDetectionX:
                 threat_var = -(pow(w * h, 1/2) / dist if dist else 999)
                 threat_list.append([threat_var, [x, y, w, h], final_cls_ind])
 
-        x0, y0, fire_range, fire_pos, fire_close, fire_ok, frame = threat_handling(frames, threat_list, recoil_coty, frame_height, frame_width)
+        x0, y0, fire_range, fire_pos, fire_close, fire_ok, frames = threat_handling(frames, threat_list, recoil_coty, frame_height, frame_width)
 
         return len(threat_list), int(x0), int(y0), int(ceil(fire_range)), fire_pos, fire_close, fire_ok, frames
 

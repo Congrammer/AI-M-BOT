@@ -87,7 +87,7 @@ class FrameDetection34:
                 if classid == 0:
                     h_factor = 0.5
                 dist = sqrt(pow(frame_width / 2 - (x + w / 2), 2) + pow(frame_height / 2 - (y + h * h_factor), 2))
-                threat_var = -(pow(w * h, 1/2) / dist if dist else 999)
+                threat_var = -(pow(w * h, 1/2) / dist if dist else 9999)
                 if classid == 0:
                     threat_var *= 6
                 threat_list.append([threat_var, box, classid])

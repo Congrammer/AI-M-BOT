@@ -23,11 +23,8 @@ MsgBox, %win_title%出现!!!
 IsJumping := False
 w_pressed := s_pressed := a_pressed := d_pressed := 0
 CheckPosition1(BX, BY, BW, BH, win_class)
-BM := 1
-if instr(win_class, "CrossFire")
-    BM := (BW/BH) / (4/3)
 boxh := Round(BH / 9 * 4)
-boxw := Round(boxh * 1.6 * BM)
+boxw := Round(boxh * 1.6)
 showx := BX + (BW - boxw) // 2 - 1
 showy := BY + (BH - boxh) // 2 - 1
 showw := boxw + 2
