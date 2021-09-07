@@ -1,7 +1,7 @@
 from win32con import VK_END, PROCESS_ALL_ACCESS, SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
+from util import set_dpi, is_full_screen, is_admin, clear, restart, millisleep
 from win32api import GetAsyncKeyState, GetCurrentProcessId, OpenProcess
 from win32process import SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS
-from util import set_dpi, is_full_screen, is_admin, clear, restart
 from mouse import mouse_xy, mouse_down, mouse_up, mouse_close
 from multiprocessing import Process, Array, Pipe
 from darknet_yolo34 import FrameDetection34
@@ -12,9 +12,9 @@ from pynput.mouse import Listener
 from sys import exit, platform
 from collections import deque
 from statistics import median
-from time import sleep, time
 from random import uniform
 from ctypes import windll
+from time import time
 import numpy as np
 import pywintypes
 import win32gui
@@ -50,7 +50,7 @@ def get_window_info():
             print('已找到窗口')
             if class_name in test_window:
                 testing_purpose = True
-        sleep(3)
+        millisleep(3000)
     return class_name, hwnd_var, outer_hwnd, testing_purpose
 
 
@@ -68,7 +68,7 @@ def check_file(file):
     weights_file = file + '.weights'
     if not (os.path.isfile(cfg_file) and os.path.isfile(weights_file)):
         print(f'请下载{file}相关文件!!!')
-        sleep(3)
+        millisleep(3000)
         exit(0)
 
 
@@ -334,7 +334,7 @@ def main():
     # 等待游戏画面完整出现(拥有大于0的长宽)
     window_ready = 0
     while not window_ready:
-        sleep(1)
+        millisleep(1000)
         win_client_rect = win32gui.GetClientRect(window_hwnd_name)
         win_pos = win32gui.ClientToScreen(window_hwnd_name, (0, 0))
         if win_client_rect[2] - win_client_rect[0] > 0 and win_client_rect[3] - win_client_rect[1] > 0:
@@ -359,7 +359,7 @@ def main():
 
     # 等待分析类初始化
     while not arr[1]:
-        sleep(4)
+        millisleep(4000)
 
     # clear()  # 清空命令指示符面板
 
