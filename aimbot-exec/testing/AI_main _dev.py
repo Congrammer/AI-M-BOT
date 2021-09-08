@@ -78,7 +78,7 @@ def move_mouse(a, b, fps_var, ranges, win_class, move_rx, move_ry):
     if mouse_speed != 10:
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, mouse_speed, 0)
 
-    return move_rx, move_ry
+    return move_rx, move_ry, move_range
 
 
 # 鼠标射击
@@ -305,7 +305,7 @@ def main():
     arr[7] = 0  # 目标数量
     arr[8] = 1  # 移动鼠标与否
     arr[9] = 1  # 按击鼠标与否
-    arr[10] = 944  # 射击速度
+    arr[10] = 94.4  # 射击速度
     arr[11] = 0  # 瞄准位置(0中1头2胸)
     arr[12] = 0  # 简易后坐力控制
     arr[13] = 0  # CF下红名
@@ -384,8 +384,8 @@ def main():
                     change_withlock(arr, 10, 94.4 if enemy_close or arr[11] != 1 else 169.4, lock)
                 elif arr[6] == 2:  # 副武器
                     change_withlock(arr, 10, 69.4 if enemy_close or arr[11] != 1 else 94.4, lock)
-                move_record_x, move_record_y, = move_mouse(moveX, moveY, show_fps[0], fire0range, window_class_name, move_record_x, move_record_y)
-                d_time, u_time = click_mouse(window_class_name, 0, fire0range, arr[10], can_fire, d_time, u_time)
+                move_record_x, move_record_y, move0range = move_mouse(moveX, moveY, show_fps[0], fire0range, window_class_name, move_record_x, move_record_y)
+                d_time, u_time = click_mouse(window_class_name, move0range, fire0range, arr[10], can_fire, d_time, u_time)
 
         if not F11_Mode:
             frame_input.send(screenshot)
