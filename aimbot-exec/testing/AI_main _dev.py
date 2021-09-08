@@ -6,9 +6,9 @@ from multiprocessing import Process, shared_memory, Array, Pipe, Lock
 from mouse import mouse_xy, mouse_down, mouse_up, mouse_close
 from darknet_yolo34 import FrameDetection34
 from math import sqrt, pow, atan, cos, pi
+from pynput.mouse import Listener, Button
 from torch_yolox import FrameDetectionX
 from scrnshot import WindowCapture
-from pynput.mouse import Listener
 from sys import exit, platform
 from collections import deque
 from statistics import median
@@ -53,9 +53,9 @@ def move_mouse(a, b, fps_var, ranges, win_class, move_rx, move_ry):
     if fps_var and arr[6]:
         a = cos((pi - atan(a/arr[5])) / 2) * (2*arr[5]) / DPI_Var[0]
         b = cos((pi - atan(b/arr[5])) / 2) * (2*arr[5]) / DPI_Var[0]
-        if move_range > 6 * ranges:
-            a *= uniform(0.9, 1.1)
-            b *= uniform(0.9, 1.1)
+        # if move_range > 6 * ranges:
+        #     a *= uniform(0.9, 1.1)
+        #     b *= uniform(0.9, 1.1)
         fps_factorx = pow(fps_var/4, 1/3)
         fps_factory = pow(fps_var/3, 1/3)
         x0 = {
@@ -82,26 +82,22 @@ def move_mouse(a, b, fps_var, ranges, win_class, move_rx, move_ry):
 
 
 # 鼠标射击
-def click_mouse(win_class, move_range, ranges, rate, go_fire, down_time, up_time):
+def click_mouse(win_class, move_range, ranges, rate, go_fire):
     # 不分敌友射击
-    if arr[15]:  # GetAsyncKeyState(VK_LBUTTON) < 0 or GetKeyState(VK_LBUTTON) < 0
-        if time() * 1000 - down_time > 30.6:  # or not arr[11]
+    if arr[15]:  # GetAsyncKeyState(VK_LBUTTON) < 0
+        if time() * 1000 - arr[16] > 30.6:  # press_moment
             mouse_up()
-            up_time = time() * 1000
     elif (win_class != 'CrossFire' or arr[13]):
-        if (go_fire or move_range < ranges):  # and arr[11]
-            if time() * 1000 - up_time > rate:
+        if (go_fire or move_range < ranges):
+            if time() * 1000 - arr[17] > rate:  # release_moment
                 mouse_down()
-                down_time = time() * 1000
-                shoot_times[0] += 1
+                change_withlock(arr, 18, arr[18] + 1, lock)
 
-    if time() * 1000 - up_time > 239.4:
-        shoot_times[0] = 0
+    if time() * 1000 - arr[17] > 219.4:
+        change_withlock(arr, 18, 0, lock)
 
-    if shoot_times[0] > 12:
-        shoot_times[0] = 12
-
-    return down_time, up_time
+    if arr[18] > 12:
+        change_withlock(arr, 18, 12, lock)
 
 
 # 傻追踪优化
@@ -188,7 +184,11 @@ def show_frames(output_pipe, array):
 # 鼠标检测进程
 def mouse_detection(array, lock):
     def on_click(x, y, button, pressed):
-        change_withlock(array, 15, 1 if pressed else 0, lock)
+        change_withlock(array, 15, 1 if pressed and button == Button.left else 0, lock)
+        if pressed and button == Button.left:
+            change_withlock(array, 16, time() * 1000, lock)
+        elif not pressed and button == Button.left:
+            change_withlock(array, 17, time() * 1000, lock)
 
     with Listener(on_click=on_click) as listener:
         listener.join()
@@ -274,8 +274,8 @@ def main():
             if not (2 >= Conan >= 0):
                 print('请在给定范围选择')
 
-    global shoot_times, show_fps, DPI_Var, client_ratio
-    shoot_times, show_fps, DPI_Var, client_ratio = [0], [1], [1], [1]
+    global show_fps, DPI_Var
+    show_fps, DPI_Var = [1], [1]
 
     # 寻找读取游戏窗口类型并确认截取位置
     window_class_name, window_hwnd_name, window_outer_hwnd, test_win = get_window_info()
@@ -293,7 +293,6 @@ def main():
     process_times = deque()
     exit_program, restart_program = False, False
     move_record_x, move_record_y = [], []
-    d_time, u_time = 0, 0
 
     arr[0] = 0  # 截图宽
     arr[1] = 0  # 截图高
@@ -311,6 +310,9 @@ def main():
     arr[13] = 0  # CF下红名
     arr[14] = 0  # 是否退出
     arr[15] = 0  # 鼠标状态
+    arr[16] = time()  # 左键按下时刻
+    arr[17] = time()  # 左键抬起时刻
+    arr[18] = 0  # 连续射击次数
 
     # 确认大致平均后坐影响
     recoil_control = {
@@ -338,7 +340,7 @@ def main():
         win_pos = win32gui.ClientToScreen(window_hwnd_name, (0, 0))
         if win_client_rect[2] - win_client_rect[0] > 0 and win_client_rect[3] - win_client_rect[1] > 0:
             window_ready = 1
-    client_ratio[0] = (win_client_rect[2] - win_client_rect[0]) / (win_client_rect[3] - win_client_rect[1])
+
     print(win_pos[0], win_pos[1], win_client_rect[2], win_client_rect[3])
 
     # 初始化分析类
@@ -380,14 +382,14 @@ def main():
             change_withlock(arr, 11, fire0pos, lock)
 
         if str(win32gui.GetForegroundWindow()) in (str(window_hwnd_name) + str(window_outer_hwnd)) and not test_win:
-            change_withlock(arr, 12, recoil_control * shoot_times[0], lock)
+            change_withlock(arr, 12, recoil_control * arr[18], lock)
             if arr[6]:  # 是否需要控制鼠标
                 if arr[6] == 1:  # 主武器
                     change_withlock(arr, 10, 94.4 if enemy_close or arr[11] != 1 else 169.4, lock)
                 elif arr[6] == 2:  # 副武器
                     change_withlock(arr, 10, 69.4 if enemy_close or arr[11] != 1 else 94.4, lock)
                 move_record_x, move_record_y, move0range = move_mouse(moveX, moveY, show_fps[0], fire0range, window_class_name, move_record_x, move_record_y)
-                d_time, u_time = click_mouse(window_class_name, move0range, fire0range, arr[10], can_fire, d_time, u_time)
+                click_mouse(window_class_name, move0range, fire0range, arr[10], can_fire)
 
         if not F11_Mode:
             frame_input.send(screenshot)
