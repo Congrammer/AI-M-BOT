@@ -40,8 +40,8 @@ def change_withlock(arrays, var, target_var, locker):
 
 # 移动鼠标
 def move_mouse(a, b, fps_var, ranges, win_class, move_rx, move_ry):
-    move_rx, a = track_opt(move_rx, a)
-    move_ry, b = track_opt(move_ry, b)
+    # move_rx, a = track_opt(move_rx, a)
+    # move_ry, b = track_opt(move_ry, b)
     move_range = sqrt(pow(a, 2) + pow(b, 2))
     enhanced_holdback = win32gui.SystemParametersInfo(SPI_GETMOUSE)
     if enhanced_holdback[1]:
@@ -51,8 +51,8 @@ def move_mouse(a, b, fps_var, ranges, win_class, move_rx, move_ry):
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
     if fps_var and arr[6]:
-        a = cos((pi - atan(a/arr[5])) / 2) * (2*arr[5]) / fps_var
-        b = cos((pi - atan(b/arr[5])) / 2) * (2*arr[5]) / fps_var
+        a = cos((pi - atan(a/arr[5])) / 2) * (2*arr[5]) / DPI_Var[0]
+        b = cos((pi - atan(b/arr[5])) / 2) * (2*arr[5]) / DPI_Var[0]
         if move_range > 6 * ranges:
             a *= uniform(0.9, 1.1)
             b *= uniform(0.9, 1.1)
@@ -111,7 +111,7 @@ def track_opt(record_list, range_m):
             record_list.append(range_m)
         else:
             record_list.clear()
-        if len(record_list) > sqrt(show_fps[0]) and arr[4]:
+        if len(record_list) > sqrt(show_fps[0]) and arr[6]:
             range_m *= pow(show_fps[0]/3, 1/3)
             record_list.clear()
     else:
@@ -356,8 +356,10 @@ def main():
 
     while True:
         try:
-            screenshot = np.ndarray((int(arr[0]), int(arr[1]), 3), dtype=np.uint8, buffer=existing_shm.buf)
-            if screenshot.any():
+            screenshots = np.ndarray((int(arr[0]), int(arr[1]), 3), dtype=np.uint8, buffer=existing_shm.buf)
+            if screenshots.any():
+                screenshot = np.ndarray(screenshots.shape, dtype=screenshots.dtype)
+                screenshot[:] = screenshots[:]
                 frame_height, frame_width = screenshot.shape[:2]
 
             # 画实心框避免错误检测武器与手
