@@ -1,8 +1,8 @@
 from win32con import VK_END, PROCESS_ALL_ACCESS, SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
 from util import set_dpi, is_full_screen, is_admin, clear, restart, millisleep, get_window_info
-from win32api import ChangeDisplaySettings, GetAsyncKeyState, GetCurrentProcessId, OpenProcess, GetSystemMetrics
+from win32api import GetAsyncKeyState, GetCurrentProcessId, OpenProcess, GetSystemMetrics
 from win32process import SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS
-from multiprocessing import Process, shared_memory, Array, Pipe, RLock, Lock
+from multiprocessing import Process, shared_memory, Array, Pipe, Lock
 from mouse import mouse_xy, mouse_down, mouse_up, mouse_close
 from darknet_yolo34 import FrameDetection34
 from math import sqrt, pow, atan, cos, pi
@@ -50,9 +50,9 @@ def move_mouse(a, b, fps_var, ranges, win_class, move_rx, move_ry):
     if mouse_speed != 10:
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
-    if fps_var and arr[17] and arr[11] and arr[4]:
-        a = cos((pi - atan(a/arr[18])) / 2) * (2*arr[18]) / DPI_Var[0]
-        b = cos((pi - atan(b/arr[18])) / 2) * (2*arr[18]) / DPI_Var[0]
+    if fps_var and arr[6]:
+        a = cos((pi - atan(a/arr[5])) / 2) * (2*arr[5]) / fps_var
+        b = cos((pi - atan(b/arr[5])) / 2) * (2*arr[5]) / fps_var
         if move_range > 6 * ranges:
             a *= uniform(0.9, 1.1)
             b *= uniform(0.9, 1.1)
@@ -95,7 +95,7 @@ def click_mouse(win_class, move_range, ranges, rate, go_fire, down_time, up_time
                 down_time = time() * 1000
                 shoot_times[0] += 1
 
-    if time() * 1000 - up_time > 219.4:
+    if time() * 1000 - up_time > 239.4:
         shoot_times[0] = 0
 
     if shoot_times[0] > 12:
@@ -124,6 +124,7 @@ def track_opt(record_list, range_m):
 def check_status(exit0, restart0):
     if GetAsyncKeyState(VK_END) < 0:  # End
         exit0 = True
+        change_withlock(arr, 14, 1, lock)
     elif GetAsyncKeyState(0x31) < 0:  # 1
         change_withlock(arr, 6, 1, lock)
     elif GetAsyncKeyState(0x32) < 0:  # 2
@@ -136,6 +137,7 @@ def check_status(exit0, restart0):
         change_withlock(arr, 8, 0, lock)
     elif GetAsyncKeyState(0x50) < 0:  # P
         restart0 = 1
+        change_withlock(arr, 14, 1, lock)
 
     return exit0, restart0
 
@@ -157,10 +159,10 @@ def show_frames(output_pipe, array):
         }.get(array[6])
         try:
             img_ex = np.zeros((1, 1, 3), np.uint8)
-            show_str0 = str('{:03.0f}'.format(array[4]))
+            show_str0 = str('{:03.1f}'.format(array[4]))
             show_str1 = 'Detected ' + str('{:02.0f}'.format(array[7])) + ' targets'
             show_str2 = 'Aiming at ' + fire_target_show[int(array[11])] + ' position'
-            show_str3 = 'Fire rate is at ' + str('{:02.0f}'.format((10000 / (array[10] + 306)))) + ' RPS'
+            show_str3 = 'Fire rate is at ' + str('{:02.0f}'.format((1000 / (array[10] + 30.6)))) + ' RPS'
             show_str4 = 'Please enjoy coding ^_^' if array[8] else 'Please enjoy coding @_@'
             if show_img.any():
                 show_img_h, show_img_w = show_img.shape[:2]
@@ -176,6 +178,11 @@ def show_frames(output_pipe, array):
                 cv2.waitKey(1)
         except (AttributeError, cv2.error):
             cv2.destroyAllWindows()
+
+        if array[14]:
+            break
+
+    cv2.destroyAllWindows()
 
 
 # 鼠标检测进程
@@ -195,7 +202,7 @@ def capturing(array, the_class_name, the_hwnd_name, lock):
     win_cap = WindowCapture(the_class_name, the_hwnd_name, 4/9, 192/224)  # 初始化截图类
     winw, winh = win_cap.get_window_info()  # 获取窗口宽高
     cutw, cuth = win_cap.get_cut_info()  # 获取截屏宽高
-    change_withlock(array, 0, cutw, lock)
+    change_withlock(array, 1, cutw, lock)
     change_withlock(array, 0, cuth, lock)
 
     # 计算基础边长
@@ -207,10 +214,11 @@ def capturing(array, the_class_name, the_hwnd_name, lock):
         millisleep(1)  # 降低平均cpu占用
         # screenshot = win_cap.grab_screenshot()
         screenshots = win_cap.get_screenshot()
-        change_withlock(array, 0, cutw, lock)
-        change_withlock(array, 1, cuth, lock)
-        shared_img = np.ndarray(screenshots.shape, dtype=screenshots.dtype, buffer=shm_img.buf)
-        shared_img[:] = screenshots[:]  # 将截取数据拷贝进分享的内存
+        change_withlock(array, 0, screenshots.shape[0], lock)
+        change_withlock(array, 1, screenshots.shape[1], lock)
+        with lock:
+            shared_img = np.ndarray(screenshots.shape, dtype=screenshots.dtype, buffer=shm_img.buf)
+            shared_img[:] = screenshots[:]  # 将截取数据拷贝进分享的内存
         if the_class_name == 'CrossFire':
             cut_scrn = screenshots[cuth // 2 + winh // 16 : cuth // 2 + winh // 15, cutw // 2 - winw // 40 : cutw // 2 + winw // 40]  # 从截屏中截取红名区域
 
@@ -229,7 +237,7 @@ def capturing(array, the_class_name, the_hwnd_name, lock):
         win_left = (150 if win_cap.get_window_left() - 10 < 150 else win_cap.get_window_left() - 10)
         change_withlock(array, 3, win_left, lock)
 
-        if array[2] == 100.2:
+        if array[14]:
             break
 
     win_cap.release_resource()
@@ -301,7 +309,7 @@ def main():
     arr[11] = 0  # 瞄准位置(0中1头2胸)
     arr[12] = 0  # 简易后坐力控制
     arr[13] = 0  # CF下红名
-    arr[14] = 0  # 所持武器
+    arr[14] = 0  # 是否退出
     arr[15] = 0  # 鼠标状态
 
     # 确认大致平均后坐影响
@@ -339,7 +347,6 @@ def main():
     # 等待截图类初始化
     while not arr[2]:
         millisleep(4000)
-        print(arr[2])
 
     # clear()  # 清空命令指示符面板
 
@@ -355,8 +362,8 @@ def main():
 
             # 画实心框避免错误检测武器与手
             if window_class_name == 'CrossFire':
-                cv2.rectangle(screenshot, (int(frame_width*3/4), int(frame_height*5/8)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
-                cv2.rectangle(screenshot, (0, int(frame_height*5/8)), (int(frame_width*1/4), frame_height), (127, 127, 127), cv2.FILLED)
+                cv2.rectangle(screenshot, (int(frame_width*2/3), int(frame_height*3/5)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
+                cv2.rectangle(screenshot, (0, int(frame_height*3/5)), (int(frame_width*1/3), frame_height), (127, 127, 127), cv2.FILLED)
             elif window_class_name == 'Valve001':
                 cv2.rectangle(screenshot, (int(frame_width*5/6), int(frame_height*2/3)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
                 cv2.rectangle(screenshot, (0, int(frame_height*2/3)), (int(frame_width*1/6), frame_height), (127, 127, 127), cv2.FILLED)
@@ -365,7 +372,7 @@ def main():
             print('窗口已关闭\n' + str(e))
             break
 
-        if not Conan:
+        if Conan:
             target_count, moveX, moveY, fire0range, fire0pos, enemy_close, can_fire, screenshot = Analysis.detect(screenshot, arr[12])
             change_withlock(arr, 7, target_count, lock)
             change_withlock(arr, 11, fire0pos, lock)
@@ -392,10 +399,11 @@ def main():
         process_times.append(time_used)
         med_time = median(process_times)
         show_fps[0] = 1 / med_time if med_time > 0 else 1 / (med_time + small_float)
-        change_withlock(arr, 2, int(show_fps[0]*10) / 10, lock)
+        change_withlock(arr, 4, int(show_fps[0]*10) / 10, lock)
         if len(process_times) > 119:
             process_times.popleft()
 
+    millisleep(1000)  # 为了稳定
     if not arr[2]:
         show_proc.terminate()
     mouse_detect_proc.terminate()
@@ -407,4 +415,4 @@ def main():
 
 
 arr = Array('d', range(20))  # 进程间分享数据
-lock = RLock()  # 递归锁
+lock = Lock()  # 锁
