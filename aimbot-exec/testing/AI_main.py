@@ -246,6 +246,8 @@ def capturing(array, the_class_name, the_hwnd_name, lock):
 
 # 主程序
 def main():
+    set_dpi()  # 设置高DPI不受影响
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))  # 设置工作路径
     check_file('yolov4-tiny')  # 如果文件不存在则退出
 
     if not is_admin():  # 检查管理员权限
@@ -258,9 +260,6 @@ def main():
         SetPriorityClass(handle, ABOVE_NORMAL_PRIORITY_CLASS)
     else:
         os.nice(1)
-
-    set_dpi()  # 设置高DPI不受影响
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))  # 设置工作路径
 
     # 滑稽/选择模型
     Conan = -1
