@@ -1,5 +1,6 @@
 //fork from https://github.com/ekknod/logitech-cve
 #include "ghub_mouse.h"
+#include "pch.h"
 #include <math.h>
 #include <windows.h>
 #include <winternl.h>
@@ -98,14 +99,14 @@ void GHUB_API moveR(int x, int y)
 	if (abs(x) > 127 || abs(y) > 127) {
 		int x_left = x; int y_left = y;
 		if (abs(x) > 127) {
-		    mouse_move(0, int(x / abs(x)) * 127, 0, 0);
-		    x_left = x - int(x / abs(x)) * 127;
+			mouse_move(0, int(x / abs(x)) * 127, 0, 0);
+			x_left = x - int(x / abs(x)) * 127;
 		}
 		else { mouse_move(0, int(x), 0, 0); x_left = 0; }
 
 		if (abs(y) > 127) {
-		    mouse_move(0, 0, int(y / abs(y)) * 127, 0);
-		    y_left = y - int(y / abs(y)) * 127;
+			mouse_move(0, 0, int(y / abs(y)) * 127, 0);
+			y_left = y - int(y / abs(y)) * 127;
 		}
 		else { mouse_move(0, 0, int(y), 0); y_left = 0; }
 
