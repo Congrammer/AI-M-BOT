@@ -11,25 +11,21 @@ import cv2
 # 分析类
 class FrameDetectionX:
     # 类属性
-    std_confidence = 0  # 置信度阀值
+    std_confidence = 0.1  # 置信度阀值
     nms_thd = 0.3  # 非极大值抑制
     win_class_name = None  # 窗口类名
     class_names = None  # 检测类名
     COLORS = []
     WEIGHT_FILE = ['./']
     input_shape = tuple(map(int, ['224', '192']))  # 输入尺寸
-    mean = (0.485, 0.456, 0.406)
-    std = (0.229, 0.224, 0.225)
     EP_list = onnxruntime.get_available_providers()  # ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'] Tensorrt优先于CUDA优先于CPU执行提供程序
-    session = None
-    io_binding = None
-    device_name = None
+    session, io_binding, device_name = None, None, None
     errors = 0  # 仅仅显示一次错误
 
     # 构造函数
     def __init__(self, hwnd_value):
         self.win_class_name = win32gui.GetClassName(hwnd_value)
-        self.std_confidence = {
+        self.nms_thd = {
             'Valve001': 0.3,
             'CrossFire': 0.4,
         }.get(self.win_class_name, 0.4)
@@ -76,7 +72,7 @@ class FrameDetectionX:
             return 0, 0, 0, 0, 0, 0, 0, frames
 
         # 预处理
-        img, ratio = preprocess(frames, self.input_shape, self.mean, self.std)
+        img, ratio = preprocess(frames, self.input_shape)
 
         # 检测
         if self.device_name == 'GPU':
@@ -121,32 +117,26 @@ def analyze(predictions, ratio):
     scores = predictions[:, 4:5] * predictions[:, 5:]
 
     boxes_xyxy = np.ones_like(boxes)
-    boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2] / 2
-    boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3] / 2
-    boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2] / 2
-    boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3] / 2
+    boxes_xyxy[:, 0] = boxes[:, 0] - boxes[:, 2]/2.
+    boxes_xyxy[:, 1] = boxes[:, 1] - boxes[:, 3]/2.
+    boxes_xyxy[:, 2] = boxes[:, 0] + boxes[:, 2]/2.
+    boxes_xyxy[:, 3] = boxes[:, 1] + boxes[:, 3]/2.
     boxes_xyxy /= ratio
 
     return boxes_xyxy, scores
 
 
 # 从yolox复制的预处理函数
-def preprocess(image, input_size, mean, std, swap=(2, 0, 1)):
-    if len(image.shape) == 3:
-        padded_img = np.ones((input_size[0], input_size[1], 3)) * 114.0
-    else:
-        padded_img = np.ones(input_size) * 114.0
-    img = image
+def preprocess(img, input_size, swap=(2, 0, 1)):
+    padded_img = np.ones((input_size[0], input_size[1], 3)) * 114.0
     r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
     resized_img = cv2.resize(img, (int(img.shape[1] * r), int(img.shape[0] * r)), interpolation=cv2.INTER_LINEAR).astype(np.float32)
     padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
 
     padded_img = padded_img[:, :, ::-1]
     padded_img /= 255.0
-    if mean is not None:
-        padded_img -= mean
-    if std is not None:
-        padded_img /= std
+    padded_img -= (0.485, 0.456, 0.406)
+    padded_img /= (0.229, 0.224, 0.225)
     padded_img = padded_img.transpose(swap)
     padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
     return padded_img, r
@@ -185,8 +175,38 @@ def nms(boxes, scores, nms_thr):
 
 
 # 从yolox复制的多类非极大值抑制函数
-def multiclass_nms(boxes, scores, nms_thr, score_thr):
+def multiclass_nms(boxes, scores, nms_thr, score_thr, class_agnostic=True):
     """Multiclass NMS implemented in Numpy"""
+    if class_agnostic:
+        nms_method = multiclass_nms_class_agnostic
+    else:
+        nms_method = multiclass_nms_class_aware
+    return nms_method(boxes, scores, nms_thr, score_thr)
+
+
+# 从yolox复制的多类非极大值抑制函数(class-agnostic方式)
+def multiclass_nms_class_agnostic(boxes, scores, nms_thr, score_thr):
+    """Multiclass NMS implemented in Numpy. Class-agnostic version."""
+    cls_inds = scores.argmax(1)
+    cls_scores = scores[np.arange(len(cls_inds)), cls_inds]
+
+    valid_score_mask = cls_scores > score_thr
+    if valid_score_mask.sum() == 0:
+        return None
+    valid_scores = cls_scores[valid_score_mask]
+    valid_boxes = boxes[valid_score_mask]
+    valid_cls_inds = cls_inds[valid_score_mask]
+    keep = nms(valid_boxes, valid_scores, nms_thr)
+    if keep:
+        dets = np.concatenate(
+            [valid_boxes[keep], valid_scores[keep, None], valid_cls_inds[keep, None]], 1
+        )
+    return dets
+
+
+# 从yolox复制的多类非极大值抑制函数(class-aware方式)
+def multiclass_nms_class_aware(boxes, scores, nms_thr, score_thr):
+    """Multiclass NMS implemented in Numpy. Class-aware version."""
     final_dets = []
     num_classes = scores.shape[1]
     for cls_ind in range(num_classes):
