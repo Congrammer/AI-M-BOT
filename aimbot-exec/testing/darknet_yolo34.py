@@ -27,7 +27,7 @@ class FrameDetection34:
         self.std_confidence = {
             'Valve001': 0.3,
             'CrossFire': 0.4,
-        }.get(self.win_class_name, 0.5)
+        }.get(self.win_class_name, 0.4)
 
         load_file('yolov4-tiny', self.CONFIG_FILE, self.WEIGHT_FILE)
         self.net = cv2.dnn.readNet(self.CONFIG_FILE[0], self.WEIGHT_FILE[0])  # 读取权重与配置文件

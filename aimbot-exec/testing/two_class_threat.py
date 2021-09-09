@@ -26,13 +26,12 @@ def threat_handling(frame, threat_alist, recoil_ctrl, frame_height, frame_width)
             fire_range = min(w_tht, h_tht) / 2
             fire_pos = 0
 
-        y0 += recoil_ctrl
-        xpos = x0 + frame_width / 2
-        ypos = y0 + frame_height / 2
-        line(frame, (frame_width // 2, frame_height // 2), (int(xpos), int(ypos)), (0, 0, 255), 2)
-
         # 查看是否已经指向目标
-        if 1/4 * w_tht > abs(frame_width / 2 - x_tht - w_tht / 2) and 2/5 * h_tht > abs(frame_height / 2 - y_tht - h_tht / 2):
+        if 1/4 * w_tht > abs(x0) and 2/5 * h_tht > abs(y0):
             fire_ok = 1
+
+        y0 += recoil_ctrl
+        xpos, ypos = x0 + frame_width / 2, y0 + frame_height / 2
+        line(frame, (frame_width // 2, frame_height // 2), (int(xpos), int(ypos)), (0, 0, 255), 2)
 
     return x0, y0, fire_range, fire_pos, fire_close, fire_ok, frame

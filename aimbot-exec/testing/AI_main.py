@@ -1,17 +1,18 @@
 from win32con import VK_END, PROCESS_ALL_ACCESS, SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
-from util import set_dpi, is_full_screen, is_admin, clear, restart, millisleep, get_window_info
+from util import set_dpi, is_full_screen, is_admin, clear, restart, millisleep, get_window_info, FOV
 from win32api import GetAsyncKeyState, GetCurrentProcessId, OpenProcess, GetSystemMetrics
 from win32process import SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS
 from multiprocessing import Process, shared_memory, Array, Pipe, Lock
 from mouse import mouse_xy, mouse_down, mouse_up, mouse_close
 from darknet_yolo34 import FrameDetection34
-from math import sqrt, pow, atan, cos, pi
 from pynput.mouse import Listener, Button
 from torch_yolox import FrameDetectionX
 from scrnshot import WindowCapture
 from sys import exit, platform
 from collections import deque
 from statistics import median
+from math import sqrt, pow
+from simple_pid import PID
 from random import uniform
 from ctypes import windll
 from time import time
@@ -51,8 +52,8 @@ def move_mouse(a, b, fps_var, ranges, win_class, move_rx, move_ry):
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
     if fps_var and arr[6]:
-        a = cos((pi - atan(a/arr[5])) / 2) * (2*arr[5]) / DPI_Var[0]
-        b = cos((pi - atan(b/arr[5])) / 2) * (2*arr[5]) / DPI_Var[0]
+        a = FOV(a, arr[5]) / DPI_Var[0]
+        b = FOV(b, arr[5]) / DPI_Var[0]
         # if move_range > 6 * ranges:
         #     a *= uniform(0.9, 1.1)
         #     b *= uniform(0.9, 1.1)
@@ -263,6 +264,7 @@ def main():
 
     # 滑稽/选择模型
     Conan = -1
+    print('提示: 您的选择将决定使用的模型')
     while not (2 >= Conan >= 0):
         user_choice = input('柯南能在本程序作者有生之年完结吗?(1:能, 2:能, 0:不能): ')
         try:
@@ -343,7 +345,8 @@ def main():
     print(win_pos[0], win_pos[1], win_client_rect[2], win_client_rect[3])
 
     # 初始化分析类
-    Analysis = FrameDetectionX(window_hwnd_name) if Conan == 1 else FrameDetection34(window_hwnd_name)
+    (Analysis, string_model) = (FrameDetection34(window_hwnd_name), '您正使用yolov4-tiny模型') if Conan == 1 else (FrameDetectionX(window_hwnd_name), '您正使用yolox-nano模型')
+    print(string_model)
 
     # 等待截图类初始化
     while not arr[2]:

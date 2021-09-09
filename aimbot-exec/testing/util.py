@@ -1,4 +1,5 @@
 from sys import exit, executable
+from math import atan, cos, pi
 from platform import release
 from ctypes import windll
 from os import system
@@ -113,3 +114,9 @@ def millisleep(num):
     TimeBeginPeriod(1)
     HPSleep(int(num))  # 减少报错
     TimeEndPeriod(1)
+
+
+# 简易FOV计算
+def FOV(target_move, base_len):
+    actual_move = cos((pi - atan(target_move/base_len)) / 2) * (2*base_len)
+    return actual_move
