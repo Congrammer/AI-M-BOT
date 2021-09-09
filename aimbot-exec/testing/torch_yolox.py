@@ -16,6 +16,7 @@ class FrameDetectionX:
     win_class_name = None  # 窗口类名
     class_names = None  # 检测类名
     COLORS = []
+    WEIGHT_FILE = ['./']
     input_shape = tuple(map(int, ['224', '192']))  # 输入尺寸
     mean = (0.485, 0.456, 0.406)
     std = (0.229, 0.224, 0.225)
@@ -32,13 +33,14 @@ class FrameDetectionX:
             'Valve001': 0.45,
             'CrossFire': 0.45,
         }.get(self.win_class_name, 0.5)
+        load_file('yolox_nano', self.WEIGHT_FILE)
 
         # 检测是否在GPU上运行图像识别
         self.device_name = onnxruntime.get_device()
         try:
-            self.session = onnxruntime.InferenceSession('yolox_nano.onnx', None)  # 推理构造
+            self.session = onnxruntime.InferenceSession(self.WEIGHT_FILE[0], None)  # 推理构造
         except RuntimeError:
-            self.session = onnxruntime.InferenceSession('yolox_nano.onnx', providers='CPUExecutionProvider')  # 推理构造
+            self.session = onnxruntime.InferenceSession(self.WEIGHT_FILE[0], providers='CPUExecutionProvider')  # 推理构造
             self.device_name = 'CPU'
         if self.device_name == 'GPU':
             gpu_eval = check_gpu()
@@ -233,3 +235,10 @@ def demo_postprocess(outputs, img_size, p6=False):
     outputs[..., 2:4] = np.exp(outputs[..., 2:4]) * expanded_strides
 
     return outputs
+
+
+# 加载配置与权重文件
+def load_file(file, weight_filename):
+    weights_filename = file + '.onnx'
+    weight_filename[0] += weights_filename
+    return
