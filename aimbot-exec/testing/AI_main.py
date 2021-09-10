@@ -131,7 +131,8 @@ def show_frames(output_pipe, array):
                 show_image = cv2.vconcat([show_img, img_ex])
                 cv2.imshow('Show frame', show_image)
                 cv2.waitKey(1)
-        except (AttributeError, cv2.error):
+        except (AttributeError, Exception):
+            # cv2.error
             cv2.destroyAllWindows()
 
         if array[14]:

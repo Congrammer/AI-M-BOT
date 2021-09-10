@@ -17,7 +17,7 @@ class FrameDetectionX:
     class_names = None  # 检测类名
     COLORS = []
     WEIGHT_FILE = ['./']
-    input_shape = tuple(map(int, ['224', '192']))  # 输入尺寸
+    input_shape = (224, 192)  # 输入尺寸
     EP_list = onnxruntime.get_available_providers()  # ['TensorrtExecutionProvider', 'CUDAExecutionProvider', 'CPUExecutionProvider'] Tensorrt优先于CUDA优先于CPU执行提供程序
     session, io_binding, device_name = None, None, None
     errors = 0  # 仅仅显示一次错误
@@ -36,7 +36,8 @@ class FrameDetectionX:
         try:
             self.session = onnxruntime.InferenceSession(self.WEIGHT_FILE[0], None)  # 推理构造
         except RuntimeError:
-            self.session = onnxruntime.InferenceSession(self.WEIGHT_FILE[0], providers='CPUExecutionProvider')  # 推理构造
+            self.session = onnxruntime.InferenceSession(self.WEIGHT_FILE[0], providers=['CPUExecutionProvider'])  # 推理构造
+            # self.session.set_providers('CPUExecutionProvider')
             self.device_name = 'CPU'
         if self.device_name == 'GPU':
             gpu_eval = check_gpu()
@@ -65,7 +66,8 @@ class FrameDetectionX:
                 frame_height, frame_width = frames.shape[:2]
             frame_height += 0
             frame_width += 0
-        except (cv2.error, AttributeError, UnboundLocalError) as e:
+        except (Exception, AttributeError, UnboundLocalError) as e:
+            # cv2.error
             if self.errors < 2:
                 print(str(e))
                 self.errors += 1
