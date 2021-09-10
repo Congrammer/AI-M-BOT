@@ -104,7 +104,7 @@ class FrameDetectionX:
                 # 计算威胁指数(正面画框面积的平方根除以鼠标移动到目标距离)
                 h_factor = (0.1875 if h > w else 0.5)
                 dist = sqrt(pow(frame_width / 2 - (x + w / 2), 2) + pow(frame_height / 2 - (y + h * h_factor), 2))
-                threat_var = -(pow(w * h, 1/2) / dist if dist else 999)
+                threat_var = -(pow(w * h, 1/2) / dist * final_score if dist else 9999)
                 threat_list.append([threat_var, [x, y, w, h], final_cls_ind])
 
         x0, y0, fire_range, fire_pos, fire_close, fire_ok, frames = threat_handling(frames, threat_list, recoil_coty, frame_height, frame_width)

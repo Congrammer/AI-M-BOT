@@ -10,7 +10,6 @@ import cv2
 class FrameDetection34:
     # 类属性
     side_width, side_height = 384, 448  # 512, 320  # 输入尺寸
-    std_confidence = 0  # 置信度阀值
     conf_thd = 0.3  # 置信度阀值
     nms_thd = 0.3  # 非极大值抑制
     win_class_name = None  # 窗口类名
@@ -24,8 +23,8 @@ class FrameDetection34:
     # 构造函数
     def __init__(self, hwnd_value):
         self.win_class_name = win32gui.GetClassName(hwnd_value)
-        self.std_confidence = {
-            'Valve001': 0.3,
+        self.nms_thd = {
+            'Valve001': 0.4,
             'CrossFire': 0.4,
         }.get(self.win_class_name, 0.4)
 
@@ -76,22 +75,21 @@ class FrameDetection34:
 
         # 画框
         for (classid, score, box) in zip(classes, scores, boxes):
-            if score > self.std_confidence:
-                color = self.COLORS[int(classid) % len(self.COLORS)]
-                label = self.class_names[classid[0]] + ': ' + str(round(score[0], 3))
-                x, y, w, h = box
-                cv2.rectangle(frames, (x, y), (x + w, y + h), color, 2)
-                cv2.putText(frames, label, (int(x + w/2 - 4*len(label)), int(y + h/2 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+            color = self.COLORS[int(classid) % len(self.COLORS)]
+            label = self.class_names[classid[0]] + ': ' + str(round(score[0], 3))
+            x, y, w, h = box
+            cv2.rectangle(frames, (x, y), (x + w, y + h), color, 2)
+            cv2.putText(frames, label, (int(x + w/2 - 4*len(label)), int(y + h/2 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
 
-                # 计算威胁指数(正面画框面积的平方根除以鼠标移动到目标距离)
-                h_factor = (0.1875 if h > w else 0.5)
-                if classid == 0:
-                    h_factor = 0.5
-                dist = sqrt(pow(frame_width / 2 - (x + w / 2), 2) + pow(frame_height / 2 - (y + h * h_factor), 2))
-                threat_var = -(pow(w * h, 1/2) / dist if dist else 9999)
-                if classid == 0:
-                    threat_var *= 6
-                threat_list.append([threat_var, box, classid])
+            # 计算威胁指数(正面画框面积的平方根除以鼠标移动到目标距离)
+            h_factor = (0.1875 if h > w else 0.5)
+            if classid == 0:
+                h_factor = 0.5
+            dist = sqrt(pow(frame_width / 2 - (x + w / 2), 2) + pow(frame_height / 2 - (y + h * h_factor), 2))
+            threat_var = -(pow(w * h, 1/2) / dist * score if dist else 9999)
+            if classid == 0:
+                threat_var *= 6
+            threat_list.append([threat_var, box, classid])
 
         x0, y0, fire_range, fire_pos, fire_close, fire_ok, frames = threat_handling(frames, threat_list, recoil_coty, frame_height, frame_width)
 
