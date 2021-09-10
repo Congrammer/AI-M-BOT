@@ -11,7 +11,7 @@ class FrameDetection34:
     # 类属性
     side_width, side_height = 384, 448  # 512, 320  # 输入尺寸
     std_confidence = 0  # 置信度阀值
-    conf_thd = 0.4  # 置信度阀值
+    conf_thd = 0.3  # 置信度阀值
     nms_thd = 0.3  # 非极大值抑制
     win_class_name = None  # 窗口类名
     class_names = None  # 检测类名

@@ -11,7 +11,7 @@ import cv2
 # 分析类
 class FrameDetectionX:
     # 类属性
-    std_confidence = 0.1  # 置信度阀值
+    std_confidence = 0.3  # 置信度阀值
     nms_thd = 0.3  # 非极大值抑制
     win_class_name = None  # 窗口类名
     class_names = None  # 检测类名

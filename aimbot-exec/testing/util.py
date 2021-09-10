@@ -118,5 +118,6 @@ def millisleep(num):
 
 # 简易FOV计算
 def FOV(target_move, base_len):
-    actual_move = cos((pi - atan(target_move/base_len)) / 2) * (2*base_len)
+    # actual_move = cos((pi - atan(target_move/base_len)) / 2) * (2*base_len)
+    actual_move = atan(target_move/base_len) * base_len  # 弧长
     return actual_move

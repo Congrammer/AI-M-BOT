@@ -40,10 +40,7 @@ def change_withlock(arrays, var, target_var, locker):
 
 
 # 移动鼠标
-def move_mouse(a, b, fps_var, ranges, win_class, move_rx, move_ry):
-    # move_rx, a = track_opt(move_rx, a)
-    # move_ry, b = track_opt(move_ry, b)
-    move_range = sqrt(pow(a, 2) + pow(b, 2))
+def move_mouse(a, b):
     enhanced_holdback = win32gui.SystemParametersInfo(SPI_GETMOUSE)
     if enhanced_holdback[1]:
         win32gui.SystemParametersInfo(SPI_SETMOUSE, [0, 0, 0], 0)
@@ -51,35 +48,12 @@ def move_mouse(a, b, fps_var, ranges, win_class, move_rx, move_ry):
     if mouse_speed != 10:
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
 
-    if fps_var and arr[6]:
-        a = FOV(a, arr[5]) / DPI_Var[0]
-        b = FOV(b, arr[5]) / DPI_Var[0]
-        # if move_range > 6 * ranges:
-        #     a *= uniform(0.9, 1.1)
-        #     b *= uniform(0.9, 1.1)
-        fps_factorx = pow(fps_var/4, 1/3)
-        fps_factory = pow(fps_var/3, 1/3)
-        x0 = {
-            'CrossFire': a / 2.719 / fps_factorx,  # 32
-            'Valve001': a * 1.667 / fps_factorx,  # 2.5
-            'LaunchCombatUWindowsClient': a * 1.319 / fps_factorx,  # 10.0
-            'LaunchUnrealUWindowsClient': a / 2.557 / fps_factorx,  # 20
-        }.get(win_class, a / fps_factorx)
-        y0 = {
-            'CrossFire': b / 2.719 / fps_factory,  # 32
-            'Valve001': b * 1.667 / fps_factory,  # 2.5
-            'LaunchCombatUWindowsClient': b * 1.319 / fps_factory,  # 10.0
-            'LaunchUnrealUWindowsClient': b / 2.557 / fps_factory,  # 20
-        }.get(win_class, b / fps_factory)
-
-        mouse_xy(int(round(x0)), int(round(y0)))
+    mouse_xy(int(round(a)), int(round(b)))
 
     if enhanced_holdback[1]:
         win32gui.SystemParametersInfo(SPI_SETMOUSE, enhanced_holdback, 0)
     if mouse_speed != 10:
         win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, mouse_speed, 0)
-
-    return move_rx, move_ry, move_range
 
 
 # 鼠标射击
@@ -99,22 +73,6 @@ def click_mouse(win_class, move_range, ranges, rate, go_fire):
 
     if arr[18] > 12:
         change_withlock(arr, 18, 12, lock)
-
-
-# 傻追踪优化
-def track_opt(record_list, range_m):
-    if len(record_list):
-        if abs(median(record_list) - range_m) <= 15 and abs(range_m) <= 90:
-            record_list.append(range_m)
-        else:
-            record_list.clear()
-        if len(record_list) > sqrt(show_fps[0]) and arr[6]:
-            range_m *= pow(show_fps[0]/3, 1/3)
-            record_list.clear()
-    else:
-        record_list.append(range_m)
-
-    return record_list, range_m
 
 
 # 转变状态
@@ -293,7 +251,6 @@ def main():
 
     process_times = deque()
     exit_program, restart_program = False, False
-    move_record_x, move_record_y = [], []
 
     arr[0] = 0  # 截图宽
     arr[1] = 0  # 截图高
@@ -322,6 +279,14 @@ def main():
         'LaunchCombatUWindowsClient': 2,  # 10.0
         'LaunchUnrealUWindowsClient': 5,  # 20
     }.get(window_class_name, 2)
+
+    # 测试过的几个游戏的移动系数,鼠标灵敏度设置看备注
+    move_factor = {
+        'CrossFire': 0.368,  # 32
+        'Valve001': 1.667,  # 2.5
+        'LaunchCombatUWindowsClient': 1.319,  # 10.0
+        'LaunchUnrealUWindowsClient': 0.391,  # 20
+    }.get(window_class_name, 1)
 
     capture_proc.start()  # 开始截图进程
     mouse_detect_proc.start()  # 开始鼠标监测进程
@@ -355,6 +320,8 @@ def main():
     # clear()  # 清空命令指示符面板
 
     ini_sct_time = 0  # 初始化计时
+    pidx = PID(0.3, 0.6, 0.001, setpoint=0, sample_time=0.015,)
+    pidy = PID(0.3, 0.6, 0.001, setpoint=0, sample_time=0.015,)
     small_float = np.finfo(np.float64).eps  # 初始化一个尽可能小却小得不过分的数
     existing_shm = shared_memory.SharedMemory(name='shareimg')
 
@@ -383,15 +350,23 @@ def main():
             change_withlock(arr, 7, target_count, lock)
             change_withlock(arr, 11, fire0pos, lock)
 
-        if str(win32gui.GetForegroundWindow()) in (str(window_hwnd_name) + str(window_outer_hwnd)) and not test_win:
+        if str(win32gui.GetForegroundWindow()) in (str(window_hwnd_name) + str(window_outer_hwnd)) and not test_win and arr[6]:  # 是否需要控制鼠标:
             change_withlock(arr, 12, recoil_control * arr[18], lock)
-            if arr[6]:  # 是否需要控制鼠标
-                if arr[6] == 1:  # 主武器
-                    change_withlock(arr, 10, 94.4 if enemy_close or arr[11] != 1 else 169.4, lock)
-                elif arr[6] == 2:  # 副武器
-                    change_withlock(arr, 10, 69.4 if enemy_close or arr[11] != 1 else 94.4, lock)
-                move_record_x, move_record_y, move0range = move_mouse(moveX, moveY, show_fps[0], fire0range, window_class_name, move_record_x, move_record_y)
-                click_mouse(window_class_name, move0range, fire0range, arr[10], can_fire)
+            move0range = sqrt(pow(moveX, 2) + pow(moveX, 2))  # 图上移动距离
+            moveX = FOV(moveX, arr[5]) / DPI_Var[0] * move_factor
+            moveY = FOV(moveY, arr[5]) / DPI_Var[0] * move_factor
+            pid_moveX = -pidx(moveX)
+            pid_moveY = -pidy(moveY)
+            if arr[6] == 1:  # 主武器
+                change_withlock(arr, 10, 94.4 if enemy_close or arr[11] != 1 else 169.4, lock)
+            elif arr[6] == 2:  # 副武器
+                change_withlock(arr, 10, 69.4 if enemy_close or arr[11] != 1 else 94.4, lock)
+            if target_count:
+                move_mouse(pid_moveX, pid_moveY)
+            click_mouse(window_class_name, move0range, fire0range, arr[10], can_fire)
+        else:
+            relax = pidx(uniform(-0.001, 0.001))  # 没啥用
+            relay = pidy(uniform(-0.001, 0.001))  # 没啥用
 
         if not F11_Mode:
             frame_input.send(screenshot)
@@ -404,8 +379,10 @@ def main():
         ini_sct_time = time()
         process_times.append(time_used)
         med_time = median(process_times)
+        pidx.sample_time = pidy.sample_time = med_time
+        pidx.kp = pidy.kp = 1 / pow(show_fps[0]/4, 1/3)
         show_fps[0] = 1 / med_time if med_time > 0 else 1 / (med_time + small_float)
-        change_withlock(arr, 4, int(show_fps[0]*10) / 10, lock)
+        change_withlock(arr, 4, show_fps[0], lock)
         if len(process_times) > 119:
             process_times.popleft()
 
