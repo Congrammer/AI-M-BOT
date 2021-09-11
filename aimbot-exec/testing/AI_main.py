@@ -151,11 +151,8 @@ def mouse_detection(array, lock):
         elif not pressed and button == Button.left:
             change_withlock(array, 17, time() * 1000, lock)
 
-    listener = Listener(on_click=on_click)
-    listener.start()  # 非阻塞鼠标检测线程
-
-    while array[14]:
-        sleep(1)
+    with Listener(on_click=on_click) as listener:
+        listener.join()  # 阻塞鼠标检测线程
 
 
 # 截图进程
