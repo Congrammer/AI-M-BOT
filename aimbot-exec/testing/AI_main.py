@@ -80,19 +80,19 @@ def check_status(exit0):
     if GetAsyncKeyState(VK_END) < 0:  # End
         exit0 = True
         change_withlock(arr, 14, 1, lock)
-    elif GetAsyncKeyState(0x31) < 0:  # 1
+    if GetAsyncKeyState(0x31) < 0:  # 1
         change_withlock(arr, 6, 1, lock)
-    elif GetAsyncKeyState(0x32) < 0:  # 2
+    if GetAsyncKeyState(0x32) < 0:  # 2
         change_withlock(arr, 6, 2, lock)
-    elif GetAsyncKeyState(0x33) < 0 or GetAsyncKeyState(0x34) < 0:  # 3,4
+    if GetAsyncKeyState(0x33) < 0 or GetAsyncKeyState(0x34) < 0:  # 3,4
         change_withlock(arr, 6, 0, lock)
-    elif GetAsyncKeyState(0x46) < 0:  # F恢复移动
+    if GetAsyncKeyState(0x46) < 0:  # F恢复移动
         change_withlock(arr, 8, 1, lock)
-    elif GetAsyncKeyState(0x4A) < 0:  # J停止移动
+    if GetAsyncKeyState(0x4A) < 0:  # J停止移动
         change_withlock(arr, 8, 0, lock)
-    elif GetAsyncKeyState(0x12) < 0:  # Alt恢复开火
+    if GetAsyncKeyState(0x12) < 0:  # Alt恢复开火
         change_withlock(arr, 9, 1, lock)
-    elif GetAsyncKeyState(0x30) < 0:  # 0停止开火
+    if GetAsyncKeyState(0x30) < 0:  # 0停止开火
         change_withlock(arr, 9, 0, lock)
 
     return exit0
@@ -353,6 +353,7 @@ def main():
             change_withlock(arr, 11, fire0pos, lock)
 
         if str(win32gui.GetForegroundWindow()) in (str(window_hwnd_name) + str(window_outer_hwnd)) and not test_win and arr[6]:  # 是否需要控制鼠标:
+            change_withlock(arr, 12, recoil_control * arr[18] / arr[6], lock)
             move0range = sqrt(pow(moveX, 2) + pow(moveX, 2))  # 图上移动距离
             moveX = FOV(moveX, arr[5]) / DPI_Var[0] * move_factor
             moveY = FOV(moveY, arr[5]) / DPI_Var[0] * move_factor
@@ -360,10 +361,8 @@ def main():
             pid_moveY = -pidy(moveY)
             if arr[6] == 1:  # 主武器
                 change_withlock(arr, 10, 94.4 if enemy_close or arr[11] != 1 else 169.4, lock)
-                change_withlock(arr, 12, recoil_control * arr[18], lock)
             elif arr[6] == 2:  # 副武器
                 change_withlock(arr, 10, 69.4 if enemy_close or arr[11] != 1 else 94.4, lock)
-                change_withlock(arr, 12, recoil_control / 2 * arr[18], lock)
             if target_count and arr[8]:
                 move_mouse(pid_moveX, pid_moveY)
             if arr[9]:
@@ -375,7 +374,7 @@ def main():
         if not F11_Mode:
             frame_input.send(screenshot)
 
-        exit_program= check_status(exit_program)
+        exit_program = check_status(exit_program)
         if exit_program:
             break
 
