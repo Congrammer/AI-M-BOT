@@ -76,7 +76,7 @@ def click_mouse(win_class, move_range, ranges, rate, go_fire):
 
 
 # 转变状态
-def check_status(exit0, restart0):
+def check_status(exit0):
     if GetAsyncKeyState(VK_END) < 0:  # End
         exit0 = True
         change_withlock(arr, 14, 1, lock)
@@ -86,15 +86,16 @@ def check_status(exit0, restart0):
         change_withlock(arr, 6, 2, lock)
     elif GetAsyncKeyState(0x33) < 0 or GetAsyncKeyState(0x34) < 0:  # 3,4
         change_withlock(arr, 6, 0, lock)
-    elif GetAsyncKeyState(0x46) < 0:  # F
+    elif GetAsyncKeyState(0x46) < 0:  # F恢复移动
         change_withlock(arr, 8, 1, lock)
-    elif GetAsyncKeyState(0x4A) < 0:  # J
+    elif GetAsyncKeyState(0x4A) < 0:  # J停止移动
         change_withlock(arr, 8, 0, lock)
-    elif GetAsyncKeyState(0x50) < 0:  # P
-        restart0 = 1
-        change_withlock(arr, 14, 1, lock)
+    elif GetAsyncKeyState(0x12) < 0:  # Alt恢复开火
+        change_withlock(arr, 9, 1, lock)
+    elif GetAsyncKeyState(0x30) < 0:  # 0停止开火
+        change_withlock(arr, 9, 0, lock)
 
-    return exit0, restart0
+    return exit0
 
 
 # 多线程展示效果
@@ -150,8 +151,11 @@ def mouse_detection(array, lock):
         elif not pressed and button == Button.left:
             change_withlock(array, 17, time() * 1000, lock)
 
-    with Listener(on_click=on_click) as listener:
-        listener.join()
+    listener = Listener(on_click=on_click)
+    listener.start()  # 非阻塞鼠标检测线程
+
+    while array[14]:
+        millisleep(500)
 
 
 # 截图进程
@@ -251,7 +255,7 @@ def main():
         DPI_Var[0] = 1.0
 
     process_times = deque()
-    exit_program, restart_program = False, False
+    exit_program = False
 
     arr[0] = 0  # 截图宽
     arr[1] = 0  # 截图高
@@ -352,7 +356,6 @@ def main():
             change_withlock(arr, 11, fire0pos, lock)
 
         if str(win32gui.GetForegroundWindow()) in (str(window_hwnd_name) + str(window_outer_hwnd)) and not test_win and arr[6]:  # 是否需要控制鼠标:
-            change_withlock(arr, 12, recoil_control * arr[18], lock)
             move0range = sqrt(pow(moveX, 2) + pow(moveX, 2))  # 图上移动距离
             moveX = FOV(moveX, arr[5]) / DPI_Var[0] * move_factor
             moveY = FOV(moveY, arr[5]) / DPI_Var[0] * move_factor
@@ -360,11 +363,14 @@ def main():
             pid_moveY = -pidy(moveY)
             if arr[6] == 1:  # 主武器
                 change_withlock(arr, 10, 94.4 if enemy_close or arr[11] != 1 else 169.4, lock)
+                change_withlock(arr, 12, recoil_control * arr[18], lock)
             elif arr[6] == 2:  # 副武器
                 change_withlock(arr, 10, 69.4 if enemy_close or arr[11] != 1 else 94.4, lock)
-            if target_count:
+                change_withlock(arr, 12, recoil_control / 2 * arr[18], lock)
+            if target_count and arr[8]:
                 move_mouse(pid_moveX, pid_moveY)
-            click_mouse(window_class_name, move0range, fire0range, arr[10], can_fire)
+            if arr[9]:
+                click_mouse(window_class_name, move0range, fire0range, arr[10], can_fire)
         else:
             relax = pidx(uniform(-0.001, 0.001))  # 没啥用
             relay = pidy(uniform(-0.001, 0.001))  # 没啥用
@@ -372,8 +378,8 @@ def main():
         if not F11_Mode:
             frame_input.send(screenshot)
 
-        exit_program, restart_program = check_status(exit_program, restart_program)
-        if exit_program or restart_program:
+        exit_program= check_status(exit_program)
+        if exit_program:
             break
 
         time_used = time() - ini_sct_time
@@ -393,8 +399,6 @@ def main():
     mouse_detect_proc.terminate()
     capture_proc.terminate()
     mouse_close()
-    if restart_program:
-        restart(__file__)
     exit(0)
 
 
