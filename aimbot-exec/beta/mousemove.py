@@ -48,8 +48,3 @@ for i in range(1, curve_steps+1):
     print(x, y)
     pyautogui.moveTo(x, y)  # Move to point in curve
     pyautogui.sleep(delay)  # Wait delay
-
-start = time()
-pyautogui.sleep(0.001)
-used = time() - start
-print(used)
