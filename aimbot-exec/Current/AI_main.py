@@ -19,6 +19,7 @@ from ctypes import windll
 import numpy as np
 import pywintypes
 import win32gui
+import bezier
 import cv2
 import os
 
