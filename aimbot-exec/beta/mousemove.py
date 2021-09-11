@@ -14,7 +14,7 @@ pyautogui.MINIMUM_SLEEP = 0
 pyautogui.PAUSE = 0
 
 # We'll wait 5 seconds to prepare the starting position
-start_delay = 5 
+start_delay = 5
 print("Drawing curve from mouse in {} seconds.".format(start_delay))
 pyautogui.sleep(start_delay)
 
