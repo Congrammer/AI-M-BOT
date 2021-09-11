@@ -11,11 +11,11 @@ from scrnshot import WindowCapture
 from sys import exit, platform
 from collections import deque
 from statistics import median
+from time import time, sleep
 from math import sqrt, pow
 from simple_pid import PID
 from random import uniform
 from ctypes import windll
-from time import time
 import numpy as np
 import pywintypes
 import win32gui
@@ -155,7 +155,7 @@ def mouse_detection(array, lock):
     listener.start()  # 非阻塞鼠标检测线程
 
     while array[14]:
-        millisleep(500)
+        sleep(1)
 
 
 # 截图进程
