@@ -77,7 +77,7 @@ def click_mouse(win_class, move_range, ranges, rate, go_fire):
 
 
 # 转变状态
-def check_status():
+def check_status(arr):
     if GetAsyncKeyState(VK_END) < 0:  # End
         change_withlock(arr, 14, 1, lock)
     if GetAsyncKeyState(0x31) < 0:  # 1
@@ -139,6 +139,7 @@ def show_frames(array):
                 show_image = cv2.vconcat([show_img, img_ex])
                 cv2.imshow('Show frame', show_image)
             cv2.waitKey(25)
+            check_status(array)
         except (AttributeError, Exception):  # cv2.error
             cv2.destroyAllWindows()
 
@@ -378,7 +379,6 @@ def main():
             show_img[:] = screenshot[:]  # 将截取数据拷贝进分享的内存
 
         millisleep(1)  # 降低平均cpu占用
-        check_status()
         time_used = time() - ini_sct_time
         ini_sct_time = time()
         process_times.append(time_used)
