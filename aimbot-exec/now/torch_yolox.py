@@ -26,9 +26,9 @@ class FrameDetectionX:
     def __init__(self, hwnd_value):
         self.win_class_name = win32gui.GetClassName(hwnd_value)
         self.nms_thd = {
-            'Valve001': 0.4,
-            'CrossFire': 0.4,
-        }.get(self.win_class_name, 0.4)
+            'Valve001': 0.45,
+            'CrossFire': 0.45,
+        }.get(self.win_class_name, 0.45)
         load_file('yolox_nano', self.WEIGHT_FILE)
 
         # 检测是否在GPU上运行图像识别

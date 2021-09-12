@@ -24,9 +24,9 @@ class FrameDetection34:
     def __init__(self, hwnd_value):
         self.win_class_name = win32gui.GetClassName(hwnd_value)
         self.nms_thd = {
-            'Valve001': 0.4,
-            'CrossFire': 0.4,
-        }.get(self.win_class_name, 0.4)
+            'Valve001': 0.45,
+            'CrossFire': 0.45,
+        }.get(self.win_class_name, 0.45)
 
         load_file('yolov4-tiny', self.CONFIG_FILE, self.WEIGHT_FILE)
         self.net = cv2.dnn.readNet(self.CONFIG_FILE[0], self.WEIGHT_FILE[0])  # 读取权重与配置文件

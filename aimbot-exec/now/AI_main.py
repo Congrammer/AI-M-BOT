@@ -2,10 +2,10 @@ from win32con import VK_END, PROCESS_ALL_ACCESS, SPI_GETMOUSE, SPI_SETMOUSE, SPI
 from util import set_dpi, is_full_screen, is_admin, clear, restart, millisleep, get_window_info, FOV
 from win32api import GetAsyncKeyState, GetCurrentProcessId, OpenProcess, GetSystemMetrics
 from win32process import SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS
-from multiprocessing import Process, shared_memory, Array, Pipe, Lock
+from multiprocessing import Process, shared_memory, Array, Lock
 from mouse import mouse_xy, mouse_down, mouse_up, mouse_close
-from darknet_yolo34 import FrameDetection34
 from pynput.mouse import Listener, Button
+from darknet_yolo34 import FrameDetection34
 from torch_yolox import FrameDetectionX
 from scrnshot import WindowCapture
 from sys import exit, platform
@@ -77,9 +77,8 @@ def click_mouse(win_class, move_range, ranges, rate, go_fire):
 
 
 # 转变状态
-def check_status(exit0):
+def check_status():
     if GetAsyncKeyState(VK_END) < 0:  # End
-        exit0 = True
         change_withlock(arr, 14, 1, lock)
     if GetAsyncKeyState(0x31) < 0:  # 1
         change_withlock(arr, 6, 1, lock)
@@ -96,19 +95,26 @@ def check_status(exit0):
     if GetAsyncKeyState(0x30) < 0:  # 0停止开火
         change_withlock(arr, 9, 0, lock)
 
-    return exit0
-
 
 # 多线程展示效果
-def show_frames(output_pipe, array):
+def show_frames(array):
     set_dpi()
     cv2.namedWindow('Show frame', cv2.WINDOW_KEEPRATIO)
     cv2.moveWindow('Show frame', 0, 0)
     cv2.destroyAllWindows()
     font = cv2.FONT_HERSHEY_SIMPLEX  # 效果展示字体
     fire_target_show = ['middle', 'head', 'chest']
-    while True:
-        show_img = output_pipe.recv()
+
+    while True:  # 等待共享内存加载完毕
+        try:
+            existing_show_shm = shared_memory.SharedMemory(name='showimg')
+            millisleep(1000)
+            break
+        except FileNotFoundError:
+            millisleep(1000)
+
+    while not array[14]:
+        show_img = np.ndarray((int(array[0]), int(array[1]), 3), dtype=np.uint8, buffer=existing_show_shm.buf)
         show_color = {
             0: (127, 127, 127),
             1: (255, 255, 0),
@@ -132,20 +138,19 @@ def show_frames(output_pipe, array):
                 cv2.putText(img_ex, show_str4, (10, int(array[3] / 9) * 4), font, array[3] / 450, show_color, 1, cv2.LINE_AA)
                 show_image = cv2.vconcat([show_img, img_ex])
                 cv2.imshow('Show frame', show_image)
-                cv2.waitKey(1)
-        except (AttributeError, Exception):
-            # cv2.error
+            cv2.waitKey(25)
+        except (AttributeError, Exception):  # cv2.error
             cv2.destroyAllWindows()
 
-        if array[14]:
-            break
-
     cv2.destroyAllWindows()
+    existing_show_shm.close()
 
 
 # 鼠标检测进程
 def mouse_detection(array, lock):
     def on_click(x, y, button, pressed):
+        if array[14]:
+            return False
         change_withlock(array, 15, 1 if pressed and button == Button.left else 0, lock)
         if pressed and button == Button.left:
             change_withlock(array, 16, time() * 1000, lock)
@@ -172,10 +177,10 @@ def capturing(array, the_class_name, the_hwnd_name, lock):
     change_withlock(array, 2, 1, lock)
     print(f'基础边长 = {array[5]}')
 
-    while True:
+    while not array[14]:
         millisleep(1)  # 降低平均cpu占用
-        # screenshot = win_cap.grab_screenshot()
-        screenshots = win_cap.get_screenshot()
+        screenshots = win_cap.grab_screenshot()
+        # screenshots = win_cap.get_screenshot()
         change_withlock(array, 0, screenshots.shape[0], lock)
         change_withlock(array, 1, screenshots.shape[1], lock)
         with lock:
@@ -198,9 +203,6 @@ def capturing(array, the_class_name, the_hwnd_name, lock):
 
         win_left = (150 if win_cap.get_window_left() - 10 < 150 else win_cap.get_window_left() - 10)
         change_withlock(array, 3, win_left, lock)
-
-        if array[14]:
-            break
 
     win_cap.release_resource()
     shm_img.close()
@@ -243,17 +245,14 @@ def main():
     window_class_name, window_hwnd_name, window_outer_hwnd, test_win = get_window_info()
 
     mouse_detect_proc = Process(target=mouse_detection, args=(arr, lock,))  # 鼠标检测进程
-    frame_output, frame_input = Pipe(False)  # 初始化管道(receiving,sending)
-    show_proc = Process(target=show_frames, args=(frame_output, arr,))  # 效果展示进程
+    show_proc = Process(target=show_frames, args=(arr,))  # 效果展示进程
     capture_proc = Process(target=capturing, args=(arr, window_class_name, window_hwnd_name, lock,))  # 截图进程
 
     # 检查窗口DPI
     DPI_Var[0] = max(windll.user32.GetDpiForWindow(window_outer_hwnd) / 96, windll.user32.GetDpiForWindow(window_hwnd_name) / 96)
-    if DPI_Var[0] == 0.0:
-        DPI_Var[0] = 1.0
+    DPI_Var[0] = 1.0 if DPI_Var[0] == 0.0 else DPI_Var[0]
 
     process_times = deque()
-    exit_program = False
 
     arr[0] = 0  # 截图宽
     arr[1] = 0  # 截图高
@@ -323,12 +322,13 @@ def main():
     # clear()  # 清空命令指示符面板
 
     ini_sct_time = 0  # 初始化计时
-    pidx = PID(0.3, 0.6, 0.001, setpoint=0, sample_time=0.015,)
-    pidy = PID(0.3, 0.6, 0.001, setpoint=0, sample_time=0.015,)
+    pidx = PID(0.3, 0.75, 0.001, setpoint=0, sample_time=0.010,)  # 初始化pid
+    pidy = PID(0.3, 0.75, 0.001, setpoint=0, sample_time=0.010,)  # ...
     small_float = np.finfo(np.float64).eps  # 初始化一个尽可能小却小得不过分的数
+    shm_show_img = shared_memory.SharedMemory(create=True, size=GetSystemMetrics(0) * GetSystemMetrics(1) * 3, name='showimg')  # 创建进程间共享内存
     existing_shm = shared_memory.SharedMemory(name='shareimg')
 
-    while True:
+    while not arr[14]:
         try:
             screenshots = np.ndarray((int(arr[0]), int(arr[1]), 3), dtype=np.uint8, buffer=existing_shm.buf)
             if screenshots.any():
@@ -365,20 +365,20 @@ def main():
             elif arr[6] == 2:  # 副武器
                 change_withlock(arr, 10, 69.4 if enemy_close or arr[11] != 1 else 94.4, lock)
             if target_count and arr[8]:
-                move_mouse(pid_moveX, pid_moveY)
+                move_mouse(round(pid_moveX, 3), round(pid_moveY, 3))
             if arr[9]:
                 click_mouse(window_class_name, move0range, fire0range, arr[10], can_fire)
-        else:
-            relax = pidx(uniform(-0.001, 0.001))  # 没啥用
-            relay = pidy(uniform(-0.001, 0.001))  # 没啥用
 
-        if not F11_Mode:
-            frame_input.send(screenshot)
+        if not (arr[6] and target_count and arr[8]):  # 测试帮助复原
+            relax = -pidx(0.0)
+            relay = -pidy(0.0)
 
-        exit_program = check_status(exit_program)
-        if exit_program:
-            break
+        with lock:
+            show_img = np.ndarray(screenshot.shape, dtype=screenshot.dtype, buffer=shm_show_img.buf)
+            show_img[:] = screenshot[:]  # 将截取数据拷贝进分享的内存
 
+        millisleep(1)  # 降低平均cpu占用
+        check_status()
         time_used = time() - ini_sct_time
         ini_sct_time = time()
         process_times.append(time_used)
@@ -390,7 +390,12 @@ def main():
         if len(process_times) > 119:
             process_times.popleft()
 
+    print('关闭进程中......')
     millisleep(1000)  # 为了稳定
+    shm_show_img.close()
+    existing_shm.close()
+    shm_show_img.unlink()
+    existing_shm.unlink()
     if not arr[2]:
         show_proc.terminate()
     mouse_detect_proc.terminate()
