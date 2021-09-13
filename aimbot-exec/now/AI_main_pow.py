@@ -64,7 +64,7 @@ def click_mouse(win_class, move_range, ranges, rate, go_fire):
         if time() * 1000 - arr[16] > 30.6:  # press_moment
             mouse_up()
     elif (win_class != 'CrossFire' or arr[13]):
-        if (go_fire or move_range < ranges):
+        if (arr[13] or go_fire or move_range < ranges):
             if time() * 1000 - arr[17] > rate:  # release_moment
                 mouse_down()
                 change_withlock(arr, 18, arr[18] + 1, lock)
@@ -316,6 +316,7 @@ def main():
     # clear()  # 清空命令指示符面板
 
     ini_sct_time = 0  # 初始化计时
+    target_count, moveX, moveY, fire0range, fire0pos, enemy_close, can_fire = 0, 0, 0, 0, 0, 0, 0
     pidx = PID(0.3, 0.75, 0.001, setpoint=0, sample_time=0.010,)  # 初始化pid
     pidy = PID(0.3, 0.75, 0.001, setpoint=0, sample_time=0.010,)  # ...
     small_float = np.finfo(np.float64).eps  # 初始化一个尽可能小却小得不过分的数
