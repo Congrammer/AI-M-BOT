@@ -4,8 +4,8 @@ from win32api import GetAsyncKeyState, GetCurrentProcessId, OpenProcess, GetSyst
 from win32process import SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS
 from mouse import mouse_xy, mouse_down, mouse_up, mouse_close, gmok
 from multiprocessing import Process, shared_memory, Array, Lock
-from pynput.mouse import Listener, Button
 from darknet_yolo34 import FrameDetection34
+from pynput.mouse import Listener, Button
 from torch_yolox import FrameDetectionX
 from scrnshot import WindowCapture
 from sys import exit, platform
@@ -162,6 +162,53 @@ def mouse_detection(array, lock):
         listener.join()  # 阻塞鼠标检测线程
 
 
+# 截图进程
+def capturing(array, the_class_name, the_hwnd_name, lock):
+    shm_img = shared_memory.SharedMemory(create=True, size=GetSystemMetrics(0) * GetSystemMetrics(1) * 3, name='shareimg')  # 创建进程间共享内存
+    cf_enemy_color = np.array([3487638, 3487639, 3487640, 3487641, 3422105, 3422106, 3422362, 3422363, 3422364, 3356828, 3356829, 3356830, 3356831, 3291295, 3291551, 3291552, 3291553, 3291554, 3226018, 3226019, 3226020, 3226276, 3226277, 3160741, 3160742, 3160743, 3160744, 3095208, 3095209, 3095465, 3095466, 3095467, 3029931, 3029932, 3029933, 3029934, 3030190, 2964654, 2964655, 2964656, 2964657, 2899121, 2899122, 2899123, 2899379, 2899380, 2833844, 2833845, 2833846, 2833847, 2768311, 2768567, 2768568, 2768569, 2768570, 2703034, 2703035, 2703036, 2703292, 2703292, 2703293, 2637757, 2637758, 2637759, 2637760, 2572224, 2572225, 2572481, 2572482, 2572483, 2506948, 2506949, 2506950, 2507206, 2507207, 2441671, 2441672, 2441673, 2441674, 2376138, 2376139, 2376395, 2376396, 2376397, 2310861, 2310862, 2310863, 2310864, 2311120, 2245584, 2245585, 2245586, 2245587, 2180051, 2180052, 2180308, 2180309, 2180310, 2114774, 2114775, 2114776, 2114777, 2049241, 2049497, 2049498, 2049499, 2049500, 1983964, 1983965, 1983966, 1984222, 1984223, 1918687, 1918688, 1918689, 1918690, 1853154, 1853155, 1853411, 1853412, 1853413, 1787877, 1787878, 1787879, 1787880, 1788136, 1722600, 1722601, 1722602, 1722603, 1657067, 1657068, 1657069, 1657325, 1657326, 1591790, 1591791, 1591792, 1591793, 1526514])  # CF敌方红名库
+
+    win_cap = WindowCapture(the_class_name, the_hwnd_name, 4/9, 192/224)  # 初始化截图类
+    winw, winh = win_cap.get_window_info()  # 获取窗口宽高
+    cutw, cuth = win_cap.get_cut_info()  # 获取截屏宽高
+    change_withlock(array, 1, cutw, lock)
+    change_withlock(array, 0, cuth, lock)
+
+    # 计算基础边长
+    change_withlock(array, 5, win_cap.get_side_len(), lock)
+    change_withlock(array, 2, 1, lock)
+    print(f'基础边长 = {array[5]}')
+
+    while not array[14]:
+        # millisleep(1)  # 降低平均cpu占用
+        screenshots = win_cap.grab_screenshot()
+        # screenshots = win_cap.get_screenshot()
+        change_withlock(array, 0, screenshots.shape[0], lock)
+        change_withlock(array, 1, screenshots.shape[1], lock)
+        with lock:
+            shared_img = np.ndarray(screenshots.shape, dtype=screenshots.dtype, buffer=shm_img.buf)
+            shared_img[:] = screenshots[:]  # 将截取数据拷贝进分享的内存
+        if the_class_name == 'CrossFire':
+            cut_scrn = screenshots[cuth // 2 + winh // 16 : cuth // 2 + winh // 15, cutw // 2 - winw // 40 : cutw // 2 + winw // 40]  # 从截屏中截取红名区域
+
+            # 将红名区域rgb转为十进制数值
+            hexcolor = []
+            for i in range(cut_scrn.shape[0]):
+                for j in range(cut_scrn.shape[1]):
+                    rgbint = cut_scrn[i][j][0]<<16 | cut_scrn[i][j][1]<<8 | cut_scrn[i][j][2]
+                    hexcolor.append(rgbint)
+
+            # 与内容中的敌方红名色库比较
+            hexcolor = np.array(hexcolor)
+            indices = np.intersect1d(cf_enemy_color, hexcolor)
+            change_withlock(array, 13, len(indices), lock)
+
+        win_left = (150 if win_cap.get_window_left() - 10 < 150 else win_cap.get_window_left() - 10)
+        change_withlock(array, 3, win_left, lock)
+
+    win_cap.release_resource()
+    shm_img.close()
+
+
 # 主程序
 def main():
     if not is_admin():  # 检查管理员权限
@@ -201,6 +248,7 @@ def main():
 
     mouse_detect_proc = Process(target=mouse_detection, args=(arr, lock,))  # 鼠标检测进程
     show_proc = Process(target=show_frames, args=(arr,))  # 效果展示进程
+    capture_proc = Process(target=capturing, args=(arr, window_class_name, window_hwnd_name, lock,))  # 截图进程
 
     # 检查窗口DPI
     DPI_Var[0] = max(windll.user32.GetDpiForWindow(window_outer_hwnd) / 96, windll.user32.GetDpiForWindow(window_hwnd_name) / 96)
@@ -210,7 +258,7 @@ def main():
 
     arr[0] = 0  # 截图宽
     arr[1] = 0  # 截图高
-    arr[2] = 1  # 截图进程状态
+    arr[2] = 0  # 截图进程状态
     arr[3] = 0  # 左侧距离
     arr[4] = 0  # FPS值
     arr[5] = 600  # 基础边长
@@ -244,6 +292,7 @@ def main():
         'LaunchUnrealUWindowsClient': 0.500,  # 20
     }.get(window_class_name, 1)
 
+    capture_proc.start()  # 开始截图进程
     mouse_detect_proc.start()  # 开始鼠标监测进程
 
     # 如果非全屏则展示效果
@@ -275,59 +324,27 @@ def main():
     # clear()  # 清空命令指示符面板
 
     ini_sct_time = 0  # 初始化计时
-    pidx = PID(0.3, 0.75, 0.001, setpoint=0, sample_time=0.015,)  # 初始化pid
-    pidy = PID(0.3, 0.75, 0.001, setpoint=0, sample_time=0.015,)  # ...
+    pidx = PID(0.3, 0.75, 0.001, setpoint=0, sample_time=0.010,)  # 初始化pid
+    pidy = PID(0.3, 0.75, 0.001, setpoint=0, sample_time=0.010,)  # ...
     small_float = np.finfo(np.float64).eps  # 初始化一个尽可能小却小得不过分的数
     shm_show_img = shared_memory.SharedMemory(create=True, size=GetSystemMetrics(0) * GetSystemMetrics(1) * 3, name='showimg')  # 创建进程间共享内存
-    cf_enemy_color = np.array([3487638, 3487639, 3487640, 3487641, 3422105, 3422106, 3422362, 3422363, 3422364, 3356828, 3356829, 3356830, 3356831, 3291295, 3291551, 3291552, 3291553, 3291554, 3226018, 3226019, 3226020, 3226276, 3226277, 3160741, 3160742, 3160743, 3160744, 3095208, 3095209, 3095465, 3095466, 3095467, 3029931, 3029932, 3029933, 3029934, 3030190, 2964654, 2964655, 2964656, 2964657, 2899121, 2899122, 2899123, 2899379, 2899380, 2833844, 2833845, 2833846, 2833847, 2768311, 2768567, 2768568, 2768569, 2768570, 2703034, 2703035, 2703036, 2703292, 2703292, 2703293, 2637757, 2637758, 2637759, 2637760, 2572224, 2572225, 2572481, 2572482, 2572483, 2506948, 2506949, 2506950, 2507206, 2507207, 2441671, 2441672, 2441673, 2441674, 2376138, 2376139, 2376395, 2376396, 2376397, 2310861, 2310862, 2310863, 2310864, 2311120, 2245584, 2245585, 2245586, 2245587, 2180051, 2180052, 2180308, 2180309, 2180310, 2114774, 2114775, 2114776, 2114777, 2049241, 2049497, 2049498, 2049499, 2049500, 1983964, 1983965, 1983966, 1984222, 1984223, 1918687, 1918688, 1918689, 1918690, 1853154, 1853155, 1853411, 1853412, 1853413, 1787877, 1787878, 1787879, 1787880, 1788136, 1722600, 1722601, 1722602, 1722603, 1657067, 1657068, 1657069, 1657325, 1657326, 1591790, 1591791, 1591792, 1591793, 1526514])  # CF敌方红名库
-
-    win_cap = WindowCapture(window_class_name, window_hwnd_name, 4/9, 192/224)  # 初始化截图类
-    winw, winh = win_cap.get_window_info()  # 获取窗口宽高
-    cutw, cuth = win_cap.get_cut_info()  # 获取截屏宽高
-    change_withlock(arr, 1, cutw, lock)
-    change_withlock(arr, 0, cuth, lock)
-
-    # 计算基础边长
-    change_withlock(arr, 5, win_cap.get_side_len(), lock)
-    print(f'基础边长 = {arr[5]}')
+    existing_shm = shared_memory.SharedMemory(name='shareimg')
 
     while not arr[14]:
-        screenshot = win_cap.grab_screenshot()
-        # screenshot = win_cap.get_screenshot()
-        change_withlock(arr, 0, screenshot.shape[0], lock)
-        change_withlock(arr, 1, screenshot.shape[1], lock)
         try:
-            if screenshot.any():
+            screenshots = np.ndarray((int(arr[0]), int(arr[1]), 3), dtype=np.uint8, buffer=existing_shm.buf)
+            if screenshots.any():
+                screenshot = np.ndarray(screenshots.shape, dtype=screenshots.dtype)
+                screenshot[:] = screenshots[:]
                 frame_height, frame_width = screenshot.shape[:2]
 
             # 画实心框避免错误检测武器与手
             if window_class_name == 'CrossFire':
                 cv2.rectangle(screenshot, (int(frame_width*2/3), int(frame_height*3/5)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
                 cv2.rectangle(screenshot, (0, int(frame_height*3/5)), (int(frame_width*1/3), frame_height), (127, 127, 127), cv2.FILLED)
-                cut_scrn = screenshot[cuth // 2 + winh // 16 : cuth // 2 + winh // 15, cutw // 2 - winw // 40 : cutw // 2 + winw // 40]  # 从截屏中截取红名区域
-
-                # 将红名区域rgb转为十进制数值
-                hexcolor = []
-                for i in range(cut_scrn.shape[0]):
-                    for j in range(cut_scrn.shape[1]):
-                        rgbint = cut_scrn[i][j][0]<<16 | cut_scrn[i][j][1]<<8 | cut_scrn[i][j][2]
-                        hexcolor.append(rgbint)
-
-                # 与内容中的敌方红名色库比较
-                hexcolor = np.array(hexcolor)
-                indices = np.intersect1d(cf_enemy_color, hexcolor)
-                change_withlock(arr, 13, len(indices), lock)
-
             elif window_class_name == 'Valve001':
                 cv2.rectangle(screenshot, (int(frame_width*5/6), int(frame_height*2/3)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
                 cv2.rectangle(screenshot, (0, int(frame_height*2/3)), (int(frame_width*1/6), frame_height), (127, 127, 127), cv2.FILLED)
-
-            elif window_class_name == 'LaunchUnrealUWindowsClient':
-                cv2.rectangle(screenshot, (int(frame_width*3/4), int(frame_height*3/5)), (frame_width, frame_height), (127, 127, 127), cv2.FILLED)
-                cv2.rectangle(screenshot, (0, int(frame_height*3/5)), (int(frame_width*1/4), frame_height), (127, 127, 127), cv2.FILLED)
-
-            win_left = (150 if win_cap.get_window_left() - 10 < 150 else win_cap.get_window_left() - 10)
-            change_withlock(arr, 3, win_left, lock)
 
         except (AttributeError, pywintypes.error) as e:
             print('窗口已关闭\n' + str(e))
@@ -362,6 +379,7 @@ def main():
             show_img = np.ndarray(screenshot.shape, dtype=screenshot.dtype, buffer=shm_show_img.buf)
             show_img[:] = screenshot[:]  # 将截取数据拷贝进分享的内存
 
+        # millisleep(1)  # 降低平均cpu占用
         time_used = time() - ini_sct_time
         ini_sct_time = time()
         process_times.append(time_used)
@@ -374,13 +392,15 @@ def main():
             process_times.popleft()
 
     print('关闭进程中......')
-    win_cap.release_resource()
     millisleep(1000)  # 为了稳定
     shm_show_img.close()
+    existing_shm.close()
     shm_show_img.unlink()
+    existing_shm.unlink()
     if not F11_Mode:
         show_proc.terminate()
     mouse_detect_proc.terminate()
+    capture_proc.terminate()
     mouse_close()
     exit(0)
 

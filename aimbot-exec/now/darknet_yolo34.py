@@ -62,8 +62,7 @@ class FrameDetection34:
                 frame_height, frame_width = frames.shape[:2]
             frame_height += 0
             frame_width += 0
-        except (Exception, AttributeError, UnboundLocalError) as e:
-            # cv2.error
+        except (cv2.error, AttributeError, UnboundLocalError) as e:
             if self.errors < 2:
                 print(str(e))
                 self.errors += 1
