@@ -1,5 +1,5 @@
 from win32con import VK_END, PROCESS_ALL_ACCESS, SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
-from util import set_dpi, is_full_screen, is_admin, clear, restart, millisleep, get_window_info, FOV
+from util import set_dpi, is_full_screen, is_admin, clear, restart, millisleep, get_window_info, FOV, use_choice
 from win32api import GetAsyncKeyState, GetCurrentProcessId, OpenProcess, GetSystemMetrics
 from win32process import SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS
 from mouse import mouse_xy, mouse_down, mouse_up, mouse_close, gmok
@@ -181,17 +181,8 @@ def main():
         os.nice(1)
 
     # 滑稽/选择模型
-    Conan = -1
     print('提示: 您的选择将决定使用的模型')
-    while not (2 >= Conan >= 0):
-        user_choice = input('柯南能在本程序作者有生之年完结吗?(1:能, 2:能, 0:不能): ')
-        try:
-            Conan = int(user_choice)
-        except ValueError:
-            print('呵呵...请重新输入')
-        finally:
-            if not (2 >= Conan >= 0):
-                print('请在给定范围选择')
+    Conan = use_choice(0, 2, '柯南能在本程序作者有生之年完结吗?(1:能, 2:能, 0:不能): ')
 
     global show_fps, DPI_Var
     show_fps, DPI_Var = [1], [1]

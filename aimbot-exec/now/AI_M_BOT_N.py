@@ -17,6 +17,7 @@ Mouse event method project Author: ekknod
 """
 
 from multiprocessing import freeze_support
+from util import use_choice
 
 
 # 主程序
@@ -25,17 +26,7 @@ if __name__ == '__main__':
     freeze_support()
 
     # 选择标准/烧卡模式
-    main_model = 0
-    while not (2 >= main_model >= 1):
-        user_choice = input('请问您的电脑是高配机吗?(1:是, 2:不是): ')
-        try:
-            main_model = int(user_choice)
-        except ValueError:
-            print('呵呵...请重新输入')
-        finally:
-            if not (2 >= main_model >= 1):
-                print('请在给定范围选择')
-
+    main_model = use_choice(1, 2, '请问您的电脑是高配机吗?(1:是, 2:不是): ')
     if main_model == 1:
         from AI_main_pow import main
     else:

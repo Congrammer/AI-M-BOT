@@ -122,3 +122,18 @@ def FOV(target_move, base_len):
     # actual_move = cos((pi - atan(target_move/base_len)) / 2) * (2*base_len)
     actual_move = atan(target_move/base_len) * base_len  # 弧长
     return actual_move
+
+
+# 用户选择
+def use_choice(rangemin, rangemax, askstring):
+    selection = -1
+    while not (rangemax >= selection >= rangemin):
+        user_choice = input(askstring)
+        try:
+            selection = int(user_choice)
+            if not (rangemax >= selection >= rangemin):
+                print('请在给定范围选择')
+        except ValueError:
+            print('呵呵...请重新输入')
+
+    return selection
