@@ -1,4 +1,4 @@
-from ctypes import CDLL, c_int, c_int64, windll
+from ctypes import CDLL, c_int, c_int64
 from os import path
 
 
@@ -11,7 +11,7 @@ msdkdlldir = path.join(basedir, 'msdk.dll')
 gm = CDLL(ghubdlldir)
 gmok = gm.Agulll()
 
-msdk = windll.LoadLibrary(msdkdlldir)
+msdk = CDLL(msdkdlldir)
 M_Open = msdk.M_Open
 M_Open.argtypes = [c_int]
 M_Open.restype = c_int64
