@@ -26,8 +26,8 @@ if __name__ == '__main__':
     freeze_support()
 
     # 选择标准/烧卡模式
-    main_model = use_choice(1, 2, '请问您的电脑是高配机吗?(1:是, 2:不是): ')
-    if main_model == 1:
+    main_model = use_choice(1, 2, '请问您的电脑是高配机吗?(1:不是, 2:是): ')
+    if main_model == 2:
         from AI_main_pow import main
     else:
         from AI_main import main

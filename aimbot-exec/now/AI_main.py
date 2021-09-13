@@ -171,6 +171,7 @@ def main():
     os.chdir(os.path.dirname(os.path.abspath(__file__)))  # 设置工作路径
     check_file('yolov4-tiny')  # 如果文件不存在则退出
     print(f'罗技驱动加载状态: {gmok}')
+    print(f'飞易来/文盒驱动加载状态: {msdkok}')
 
     # 提升进程优先级
     if platform == 'win32':
