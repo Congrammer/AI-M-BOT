@@ -14,10 +14,6 @@ typedef struct {
 	char unk1;
 } MOUSE_IO;
 
-#define MOUSE_PRESS 1
-#define MOUSE_RELEASE 2
-#define MOUSE_MOVE 3
-#define MOUSE_CLICK 4
 
 static HANDLE g_input;
 static IO_STATUS_BLOCK g_io;
@@ -47,7 +43,7 @@ static NTSTATUS device_initialize(PCWSTR device_name)
 }
 
 
-BOOL GHUB_API mouse_open()
+BOOL Agulll()  // mouse_open
 {
 	NTSTATUS status = 0;
 
@@ -69,7 +65,7 @@ BOOL GHUB_API mouse_open()
 }
 
 
-void GHUB_API mouse_close()
+void Shwaji()  // mouse_close
 {
 	if (g_input != 0) {
 		NtClose(g_input);  //ZwClose
@@ -78,7 +74,7 @@ void GHUB_API mouse_close()
 }
 
 
-void mouse_move(char button, char x, char y, char wheel)
+void Check(char button, char x, char y, char wheel)  // mouse_move
 {
 	MOUSE_IO io;
 	io.unk1 = 0;
@@ -88,41 +84,47 @@ void mouse_move(char button, char x, char y, char wheel)
 	io.wheel = wheel;
 
 	if (!callmouse(&io)) {
-		mouse_close();
-		mouse_open();
+		Shwaji();  // mouse_close
+		Agulll();  // mouse_open
 	}
 }
 
 
-void GHUB_API moveR(int x, int y)
+void Mach_Move(int x, int y)  // moveR
 {
 	if (abs(x) > 127 || abs(y) > 127) {
 		int x_left = x; int y_left = y;
 		if (abs(x) > 127) {
-			mouse_move(0, int(x / abs(x)) * 127, 0, 0);
+			Check(0, int(x / abs(x)) * 127, 0, 0);
 			x_left = x - int(x / abs(x)) * 127;
 		}
-		else { mouse_move(0, int(x), 0, 0); x_left = 0; }
+		else { Check(0, int(x), 0, 0); x_left = 0; }
 
 		if (abs(y) > 127) {
-			mouse_move(0, 0, int(y / abs(y)) * 127, 0);
+			Check(0, 0, int(y / abs(y)) * 127, 0);
 			y_left = y - int(y / abs(y)) * 127;
 		}
-		else { mouse_move(0, 0, int(y), 0); y_left = 0; }
+		else { Check(0, 0, int(y), 0); y_left = 0; }
 
-		return moveR(x_left, y_left);
+		return Mach_Move(x_left, y_left);
 	}
-	else { mouse_move(0, x, y, 0); }
+	else { Check(0, x, y, 0); }
 }
 
 
-void GHUB_API press(char button)
+void Leo_Kick(char button)  // press
 {
-	mouse_move(button, 0, 0, 0);
+	Check(button, 0, 0, 0);
 }
 
 
-void GHUB_API release()
+void Niman_years()  // release
 {
-	mouse_move(0, 0, 0, 0);
+	Check(0, 0, 0, 0);
+}
+
+
+void Mebiuspin(char wheel)  // scroll
+{
+	Check(0, 0, 0, -wheel);  //向下为正
 }

@@ -1,8 +1,8 @@
 from win32con import VK_END, PROCESS_ALL_ACCESS, SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
 from util import set_dpi, is_full_screen, is_admin, clear, restart, millisleep, get_window_info, FOV, use_choice
+from mouse import mouse_xy, mouse_down, mouse_up, mouse_close, scroll, key_down, key_up, gmok, msdkok
 from win32api import GetAsyncKeyState, GetCurrentProcessId, OpenProcess, GetSystemMetrics
 from win32process import SetPriorityClass, ABOVE_NORMAL_PRIORITY_CLASS
-from mouse import mouse_xy, mouse_down, mouse_up, mouse_close, gmok
 from multiprocessing import Process, shared_memory, Array, Lock
 from darknet_yolo34 import FrameDetection34
 from pynput.mouse import Listener, Button
