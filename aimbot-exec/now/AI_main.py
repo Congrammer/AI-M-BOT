@@ -63,8 +63,8 @@ def click_mouse(win_class, move_range, ranges, rate, go_fire):
     if arr[15]:  # GetAsyncKeyState(VK_LBUTTON) < 0
         if time() * 1000 - arr[16] > 30.6:  # press_moment
             mouse_up()
-    elif (win_class != 'CrossFire' or arr[13]):
-        if (arr[13] or go_fire or move_range < ranges):
+    elif win_class != 'CrossFire' or arr[13]:
+        if arr[13] or go_fire or move_range < ranges:
             if time() * 1000 - arr[17] > rate:  # release_moment
                 mouse_down()
                 change_withlock(arr, 18, arr[18] + 1, lock)
@@ -185,7 +185,6 @@ def main():
     print('提示: 您的选择将决定使用的模型')
     Conan = use_choice(0, 2, '柯南能在本程序作者有生之年完结吗?(1:能, 2:能, 0:不能): ')
 
-    global show_fps, DPI_Var
     show_fps, DPI_Var = [1], [1]
 
     # 寻找读取游戏窗口类型并确认截取位置
@@ -230,7 +229,7 @@ def main():
 
     # 测试过的几个游戏的移动系数,鼠标灵敏度设置看备注
     move_factor = {
-        'CrossFire': 0.368,  # 32
+        'CrossFire': 0.971,  # 32
         'Valve001': 1.667,  # 2.5
         'LaunchCombatUWindowsClient': 1.319,  # 10.0
         'LaunchUnrealUWindowsClient': 0.500,  # 20
