@@ -11,7 +11,7 @@ import cv2
 # 分析类
 class FrameDetectionX:
     # 类属性
-    std_confidence = 0.3  # 置信度阀值
+    std_confidence = 0.5  # 置信度阀值
     nms_thd = 0.3  # 非极大值抑制
     win_class_name = None  # 窗口类名
     class_names = None  # 检测类名
@@ -29,7 +29,7 @@ class FrameDetectionX:
             'Valve001': 0.45,
             'CrossFire': 0.45,
         }.get(self.win_class_name, 0.45)
-        load_file('yolox_nano', self.WEIGHT_FILE)
+        load_file('yolox_tiny', self.WEIGHT_FILE)
 
         # 检测是否在GPU上运行图像识别
         self.device_name = onnxruntime.get_device()
@@ -129,15 +129,15 @@ def analyze(predictions, ratio):
 
 # 从yolox复制的预处理函数
 def preprocess(img, input_size, swap=(2, 0, 1)):
-    padded_img = np.ones((input_size[0], input_size[1], 3)) * 114.0
+    padded_img = np.ones((input_size[0], input_size[1], 3)) * 114  # .0
     r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
     resized_img = cv2.resize(img, (int(img.shape[1] * r), int(img.shape[0] * r)), interpolation=cv2.INTER_LINEAR).astype(np.float32)
     padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
 
-    padded_img = padded_img[:, :, ::-1]
-    padded_img /= 255.0
-    padded_img -= (0.485, 0.456, 0.406)
-    padded_img /= (0.229, 0.224, 0.225)
+    # padded_img = padded_img[:, :, ::-1]
+    # padded_img /= 255.0
+    # padded_img -= (0.485, 0.456, 0.406)
+    # padded_img /= (0.229, 0.224, 0.225)
     padded_img = padded_img.transpose(swap)
     padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
     return padded_img, r

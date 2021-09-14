@@ -86,6 +86,7 @@ def check_status(arr):
         change_withlock(arr, 6, 2, lock)
     if GetAsyncKeyState(0x33) < 0 or GetAsyncKeyState(0x34) < 0:  # 3,4
         change_withlock(arr, 6, 0, lock)
+        change_withlock(arr, 18, 0, lock)
     if GetAsyncKeyState(0x46) < 0:  # F恢复移动
         change_withlock(arr, 8, 1, lock)
     if GetAsyncKeyState(0x4A) < 0:  # J停止移动
@@ -305,7 +306,7 @@ def main():
     print(win_pos[0], win_pos[1], win_client_rect[2], win_client_rect[3])
 
     # 初始化分析类
-    (Analysis, string_model) = (FrameDetection34(window_hwnd_name), '您正使用yolov4-tiny模型') if Conan == 1 else (FrameDetectionX(window_hwnd_name), '您正使用yolox-nano模型')
+    (Analysis, string_model) = (FrameDetection34(window_hwnd_name), '您正使用yolov4-tiny模型') if Conan == 1 else (FrameDetectionX(window_hwnd_name), '您正使用yolox-tiny模型')
     print(string_model)
 
     # 等待截图类初始化

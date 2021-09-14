@@ -23,7 +23,7 @@ def check_gpu():
         gpu_name = pynvml.nvmlDeviceGetName(gpu_handle)
         memory_info = pynvml.nvmlDeviceGetMemoryInfo(gpu_handle)
         pynvml.nvmlShutdown()
-    except (FileNotFoundError, Exception) as e:
+    except FileNotFoundError as e:
         # pynvml.nvml.NVML_ERROR_LIBRARY_NOT_FOUND
         print(str(e))
         nvidia_smi.nvmlInit()
