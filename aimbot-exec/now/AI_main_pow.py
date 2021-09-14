@@ -317,7 +317,7 @@ def main():
     ini_sct_time = 0  # 初始化计时
     target_count, moveX, moveY, fire0range, fire0pos, enemy_close, can_fire = 0, 0, 0, 0, 0, 0, 0
     pidx = PID(0.3, 0.75, 0.001, setpoint=0, sample_time=0.010,)  # 初始化pid
-    pidy = PID(0.3, 0.75, 0.001, setpoint=0, sample_time=0.010,)  # ...
+    pidy = PID(0.3, 0.0, 0.00, setpoint=0, sample_time=0.010,)  # ...
     small_float = np.finfo(np.float64).eps  # 初始化一个尽可能小却小得不过分的数
     shm_show_img = shared_memory.SharedMemory(create=True, size=GetSystemMetrics(0) * GetSystemMetrics(1) * 3, name='showimg')  # 创建进程间共享内存
     existing_shm = shared_memory.SharedMemory(name='shareimg')
@@ -365,7 +365,6 @@ def main():
 
         if not (arr[6] and target_count and arr[8]):  # 测试帮助复原
             relax = -pidx(0.0)
-            relay = -pidy(0.0)
 
         with lock:
             show_img = np.ndarray(screenshot.shape, dtype=screenshot.dtype, buffer=shm_show_img.buf)
