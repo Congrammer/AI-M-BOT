@@ -1,5 +1,5 @@
 from two_class_threat import threat_handling
-from math import ceil, sqrt, pow
+from math import sqrt, pow
 from util import check_gpu
 import numpy as np
 import win32gui
@@ -9,13 +9,13 @@ import cv2
 # 分析类
 class FrameDetection34:
     # 类属性
-    side_width, side_height = 384, 448  # 512, 320  # 输入尺寸
+    side_width, side_height = 288, 352  # 512, 320  # 输入尺寸
     conf_thd = 0.5  # 置信度阀值
     nms_thd = 0.3  # 非极大值抑制
     win_class_name = None  # 窗口类名
     class_names = None  # 检测类名
-    CONFIG_FILE = ['./']
-    WEIGHT_FILE = ['./']
+    total_classes = 1  # 模型类数量
+    CONFIG_FILE, WEIGHT_FILE = ['./'], ['./']
     COLORS = []
     model, net = None, None  # 建立模型, 建立网络
     errors = 0  # 仅仅显示一次错误
@@ -56,7 +56,7 @@ class FrameDetection34:
             self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
             print('您没有可识别的N卡')
 
-    def detect(self, frames, recoil_coty):
+    def detect(self, frames, recoil_coty, windoww = 1600):
         try:
             if frames.any():
                 frame_height, frame_width = frames.shape[:2]
@@ -66,7 +66,7 @@ class FrameDetection34:
             if self.errors < 2:
                 print(str(e))
                 self.errors += 1
-            return 0, 0, 0, 0, 0, 0, 0, frames
+            return 0, 0, 0, 0, 0, frames
 
         # 检测
         classes, scores, boxes = self.model.detect(frames, self.conf_thd, self.nms_thd)
@@ -79,20 +79,20 @@ class FrameDetection34:
             x, y, w, h = box
             cv2.rectangle(frames, (x, y), (x + w, y + h), color, 2)
             cv2.putText(frames, label, (int(x + w/2 - 4*len(label)), int(y + h/2 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+            if classid == self.total_classes:
+                self.total_classes += 1
 
             # 计算威胁指数(正面画框面积的平方根除以鼠标移动到目标距离)
-            h_factor = (0.1875 if h > w else 0.5)
-            if classid == 0:
-                h_factor = 0.5
+            h_factor = (0.5 if w >= h or (self.total_classes > 1 and classid == 0) else 0.25)
             dist = sqrt(pow(frame_width / 2 - (x + w / 2), 2) + pow(frame_height / 2 - (y + h * h_factor), 2))
             threat_var = -(pow(w * h, 1/2) / dist * score if dist else 9999)
             if classid == 0:
                 threat_var *= 6
             threat_list.append([threat_var, box, classid])
 
-        x0, y0, fire_range, fire_pos, fire_close, fire_ok, frames = threat_handling(frames, threat_list, recoil_coty, frame_height, frame_width)
+        x0, y0, fire_pos, fire_close, fire_ok, frames = threat_handling(frames, windoww, threat_list, recoil_coty, frame_height, frame_width, self.total_classes)
 
-        return len(threat_list), int(x0), int(y0), int(ceil(fire_range)), fire_pos, fire_close, fire_ok, frames
+        return len(threat_list), int(x0), int(y0), fire_pos, fire_close, fire_ok, frames
 
 
 # 加载配置与权重文件

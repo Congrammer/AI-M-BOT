@@ -1,5 +1,5 @@
 from two_class_threat import threat_handling
-from math import ceil, sqrt, pow
+from math import sqrt, pow
 from util import check_gpu
 from numba import njit
 import numpy as np
@@ -15,6 +15,7 @@ class FrameDetectionX:
     nms_thd = 0.3  # 非极大值抑制
     win_class_name = None  # 窗口类名
     class_names = None  # 检测类名
+    total_classes = 1  # 模型类数量
     COLORS = []
     WEIGHT_FILE = ['./']
     input_shape = (224, 192)  # 输入尺寸
@@ -60,7 +61,7 @@ class FrameDetectionX:
         for i in range(len(self.class_names)):
             self.COLORS.append(tuple(np.random.randint(256, size=3).tolist()))
 
-    def detect(self, frames, recoil_coty):
+    def detect(self, frames, recoil_coty, windoww = 1600):
         try:
             if frames.any():
                 frame_height, frame_width = frames.shape[:2]
@@ -70,7 +71,7 @@ class FrameDetectionX:
             if self.errors < 2:
                 print(str(e))
                 self.errors += 1
-            return 0, 0, 0, 0, 0, 0, 0, frames
+            return 0, 0, 0, 0, 0, frames
 
         # 预处理
         img, ratio = preprocess(frames, self.input_shape)
@@ -99,16 +100,18 @@ class FrameDetectionX:
                 label = str(round(final_score, 3))
                 x, y, w, h = box[0], box[1], box[2] - box[0], box[3] - box[1]
                 cv2.putText(frames, label, (int(x + w/2 - 4*len(label)), int(y + h/2 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+                if final_cls_ind == self.total_classes:
+                    self.total_classes += 1
 
                 # 计算威胁指数(正面画框面积的平方根除以鼠标移动到目标距离)
-                h_factor = (0.1875 if h > w else 0.5)
+                h_factor = (0.5 if w >= h or (self.total_classes > 1 and final_cls_ind == 0) else 0.25)
                 dist = sqrt(pow(frame_width / 2 - (x + w / 2), 2) + pow(frame_height / 2 - (y + h * h_factor), 2))
                 threat_var = -(pow(w * h, 1/2) / dist * final_score if dist else 9999)
                 threat_list.append([threat_var, [x, y, w, h], final_cls_ind])
 
-        x0, y0, fire_range, fire_pos, fire_close, fire_ok, frames = threat_handling(frames, threat_list, recoil_coty, frame_height, frame_width)
+        x0, y0, fire_pos, fire_close, fire_ok, frames = threat_handling(frames, windoww, threat_list, recoil_coty, frame_height, frame_width, self.total_classes)
 
-        return len(threat_list), int(x0), int(y0), int(ceil(fire_range)), fire_pos, fire_close, fire_ok, frames
+        return len(threat_list), int(x0), int(y0), fire_pos, fire_close, fire_ok, frames
 
 
 # 分析预测数据
@@ -129,15 +132,11 @@ def analyze(predictions, ratio):
 
 # 从yolox复制的预处理函数
 def preprocess(img, input_size, swap=(2, 0, 1)):
-    padded_img = np.ones((input_size[0], input_size[1], 3)) * 114  # .0
+    padded_img = np.ones((input_size[0], input_size[1], 3)) * 114
     r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
     resized_img = cv2.resize(img, (int(img.shape[1] * r), int(img.shape[0] * r)), interpolation=cv2.INTER_LINEAR).astype(np.float32)
     padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
 
-    # padded_img = padded_img[:, :, ::-1]
-    # padded_img /= 255.0
-    # padded_img -= (0.485, 0.456, 0.406)
-    # padded_img /= (0.229, 0.224, 0.225)
     padded_img = padded_img.transpose(swap)
     padded_img = np.ascontiguousarray(padded_img, dtype=np.float32)
     return padded_img, r

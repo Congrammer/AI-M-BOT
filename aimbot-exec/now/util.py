@@ -1,8 +1,10 @@
+from win32con import SPI_GETMOUSE, SPI_SETMOUSE, SPI_GETMOUSESPEED, SPI_SETMOUSESPEED
 from sys import exit, executable
-from math import atan, cos, pi
 from platform import release
+from mouse import mouse_xy
 from ctypes import windll
 from os import system
+from math import atan
 import nvidia_smi
 import pywintypes
 import win32gui
@@ -117,9 +119,25 @@ def millisleep(num):
     TimeEndPeriod(1)
 
 
+# 移动鼠标
+def move_mouse(a, b):
+    enhanced_holdback = win32gui.SystemParametersInfo(SPI_GETMOUSE)
+    if enhanced_holdback[1]:
+        win32gui.SystemParametersInfo(SPI_SETMOUSE, [0, 0, 0], 0)
+    mouse_speed = win32gui.SystemParametersInfo(SPI_GETMOUSESPEED)
+    if mouse_speed != 10:
+        win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, 10, 0)
+
+    mouse_xy(round(a), round(b))
+
+    if enhanced_holdback[1]:
+        win32gui.SystemParametersInfo(SPI_SETMOUSE, enhanced_holdback, 0)
+    if mouse_speed != 10:
+        win32gui.SystemParametersInfo(SPI_SETMOUSESPEED, mouse_speed, 0)
+
+
 # 简易FOV计算
 def FOV(target_move, base_len):
-    # actual_move = cos((pi - atan(target_move/base_len)) / 2) * (2*base_len)
     actual_move = atan(target_move/base_len) * base_len  # 弧长
     return actual_move
 
